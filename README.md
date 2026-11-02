@@ -52,3 +52,4 @@ Example workflows are in `backend/examples`; import them from the Workflows pane
 - [Technical decisions](docs/TECHNICAL_DECISIONS.md)
 - [Plugin system](docs/PLUGIN_SYSTEM.md) (design)
 - [Workflow engine](docs/WORKFLOW_ENGINE.md) (design)
+- [Model routing](docs/MODEL_ROUTING.md) (design)

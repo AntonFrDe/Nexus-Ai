@@ -52,6 +52,10 @@ Known limitations:
 - Saved workspaces keep their old layout. Use Reset layout to get the new Workflow Builder preset.
 - Monaco adds significant weight: `.next/static` is about 16 MB.
 
+## Model routing
+
+The routing policy in [MODEL_ROUTING.md](MODEL_ROUTING.md) adds requirements to Milestones 3 to 7.
+
 ## Milestone 3: Execution engine (next)
 
 LangGraph integration, graph compiler, node adapters, execution lifecycle, SSE or WebSocket events,
