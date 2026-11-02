@@ -88,6 +88,8 @@ Known limitations:
 - Stored node inputs and outputs live in SQLite, with no size limit or separate artifact store yet.
 - Concurrency is one global limit (4 runs); per-resource limits arrive with Milestone 4.
 - Execution comparison and modified replay are Milestone 7.
+- One end-to-end run had a single failure, then four clean runs and a clean stress run. Its cause is
+  unknown, and it may be a test that is unstable under load.
 
 ## Milestone 4: Model Manager
 
