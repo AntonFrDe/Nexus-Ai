@@ -40,6 +40,9 @@ class Execution(Base):
     status: Mapped[str] = mapped_column(String(32))
     mode: Mapped[str] = mapped_column(String(16), default="full")
     allow_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    step_mode: Mapped[bool] = mapped_column(Boolean, default=False)
+    replay_of: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    overrides: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     entry_node: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # The run keeps its own copy, so editing the workflow cannot change what it resumes.
     graph: Mapped[dict[str, Any]] = mapped_column(JSON)

@@ -9,6 +9,15 @@ import {
 } from "@/core/models/agent-types";
 import { plugin, pluginPanel } from "@/core/models/plugin-types";
 import {
+  analytics,
+  checkpoint,
+  checkpointState,
+  comparison,
+  executionTrace,
+  langfuseConfig,
+  type LangfuseConfig,
+} from "@/core/workflow/trace-types";
+import {
   connectionResult,
   modelTestResult,
   provider,
@@ -144,7 +153,7 @@ export const apiClient = {
   /** Refused runs are an expected outcome, returned as issues rather than thrown. */
   startExecution: async (
     workflowId: string,
-    body: { input: unknown; mode?: string; node_id?: string; allow_paid?: boolean },
+    body: { input: unknown; mode?: string; node_id?: string; allow_paid?: boolean; step?: boolean },
   ): Promise<ExecutionDetail | { issues: StartIssue[] }> => {
     const response = await fetch(`/api/workflows/${workflowId}/executions`, {
       method: "POST",
@@ -161,6 +170,32 @@ export const apiClient = {
   executionAction: async (id: string, action: "pause" | "resume" | "cancel") => {
     await request(`/executions/${id}/${action}`, { method: "POST" });
   },
+  runToEnd: async (id: string) => {
+    await request(`/executions/${id}/resume`, send("POST", { run_to_end: true }));
+  },
+  executionTrace: async (id: string) =>
+    executionTrace.parse(await request(`/executions/${id}/trace`)),
+  listCheckpoints: async (id: string) =>
+    z.array(checkpoint).parse(await request(`/executions/${id}/checkpoints`)),
+  checkpointState: async (id: string, checkpointId: string) =>
+    checkpointState.parse(await request(`/executions/${id}/checkpoints/${checkpointId}`)),
+  compareExecutions: async (left: string, right: string) =>
+    comparison.parse(await request(`/executions/compare?left=${left}&right=${right}`)),
+  replayExecution: async (id: string, overrides: Record<string, unknown>, allowPaid: boolean) =>
+    executionDetail.parse(
+      await request(
+        `/executions/${id}/replay`,
+        send("POST", { overrides, allow_paid: allowPaid }),
+      ),
+    ),
+  analytics: async (days: number) => analytics.parse(await request(`/analytics?days=${days}`)),
+  langfuseConfig: async () => langfuseConfig.parse(await request("/observability/langfuse")),
+  saveLangfuseConfig: async (config: LangfuseConfig) =>
+    langfuseConfig.parse(await request("/observability/langfuse", send("PUT", config))),
+  checkLangfuse: async () =>
+    z
+      .object({ ok: z.boolean(), message: z.string() })
+      .parse(await request("/observability/langfuse/check", { method: "POST" })),
   decideExecution: async (id: string, decision: "approved" | "rejected") => {
     await request(`/executions/${id}/approval`, send("POST", { decision }));
   },

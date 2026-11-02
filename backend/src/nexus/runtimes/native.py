@@ -38,4 +38,5 @@ class NativeRuntime(RuntimeAdapter):
             model=answer.model,
             input_tokens=answer.input_tokens,
             output_tokens=answer.output_tokens,
+            cost_usd=answer.cost_usd,
         )

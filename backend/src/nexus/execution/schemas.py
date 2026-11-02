@@ -15,6 +15,19 @@ class ExecutionStart(Strict):
     mode: Literal["full", "node", "from_node"] = "full"
     node_id: str | None = None
     allow_paid: bool = False
+    step: bool = False
+
+
+class ResumeRequest(Strict):
+    # In a step-through run, finish the run instead of advancing one node.
+    run_to_end: bool = False
+
+
+class ReplayRequest(Strict):
+    """Node id -> configuration values to change. Everything else stays as recorded."""
+
+    overrides: dict[str, dict[str, Any]] = {}
+    allow_paid: bool = False
 
 
 class ApprovalDecision(Strict):
@@ -36,6 +49,9 @@ class ExecutionSummary(BaseModel):
     status: str
     mode: str
     allow_paid: bool
+    step_mode: bool
+    replay_of: str | None
+    overrides: dict[str, Any] | None
     entry_node: str | None
     error: str | None
     error_node: str | None
@@ -82,6 +98,74 @@ class CheckpointRead(BaseModel):
     checkpoint_id: str
     next: list[str]
     created_at: str | None
+
+
+class CheckpointState(BaseModel):
+    checkpoint_id: str
+    next: list[str]
+    outputs: dict[str, Any]
+    variables: dict[str, Any]
+    errors: dict[str, Any]
+
+
+class TraceSpan(BaseModel):
+    id: str
+    node_id: str
+    label: str
+    node_type: str
+    status: str
+    attempt: int
+    start_ms: int
+    duration_ms: int | None
+    model: str | None
+    tokens: int | None
+    cost_usd: float | None
+    error: str | None
+
+
+class TraceFailure(BaseModel):
+    node_id: str | None
+    label: str | None
+    message: str
+    input: Any = None
+
+
+class ExecutionTrace(BaseModel):
+    execution_id: str
+    status: str
+    recorded: bool
+    replay_of: str | None
+    overrides: dict[str, Any] | None
+    duration_ms: int | None
+    spans: list[TraceSpan]
+    failure: TraceFailure | None
+
+
+class CompareSide(BaseModel):
+    status: str | None
+    duration_ms: int | None
+    model: str | None
+    tokens: int | None
+    cost_usd: float | None
+    output: Any = None
+
+
+class CompareRow(BaseModel):
+    node_id: str
+    label: str
+    left: CompareSide
+    right: CompareSide
+    same_status: bool
+    same_output: bool
+    config_changed: bool
+
+
+class ExecutionComparison(BaseModel):
+    left_id: str
+    right_id: str
+    left_status: str
+    right_status: str
+    rows: list[CompareRow]
 
 
 class StartRejected(BaseModel):

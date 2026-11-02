@@ -71,6 +71,7 @@ function RunControls() {
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
   const [allowPaid, setAllowPaid] = useState(false);
+  const [step, setStep] = useState(false);
 
   const start = async () => {
     let input: unknown = null;
@@ -87,7 +88,7 @@ function RunControls() {
     const state = workflows.getState();
     await state.flush();
     if (!state.meta) return;
-    await executions.getState().run(state.meta.id, input, { allow_paid: allowPaid });
+    await executions.getState().run(state.meta.id, input, { allow_paid: allowPaid, step });
     const panel = registry.get("execution-list");
     if (panel && dock) {
       const existing = dock.getPanel(panel.id);
@@ -129,6 +130,14 @@ function RunControls() {
               onChange={(event) => setAllowPaid(event.target.checked)}
             />
             Allow paid calls
+          </label>
+          <label className="run-paid">
+            <input
+              type="checkbox"
+              checked={step}
+              onChange={(event) => setStep(event.target.checked)}
+            />
+            Step through
           </label>
           <button type="submit" className="text-button">
             Start

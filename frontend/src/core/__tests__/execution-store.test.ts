@@ -13,6 +13,8 @@ const detail = (status: string, id = "e1"): ExecutionDetail => ({
   status,
   mode: "full",
   allow_paid: false,
+  step_mode: false,
+  replay_of: null,
   entry_node: null,
   error: null,
   error_node: null,

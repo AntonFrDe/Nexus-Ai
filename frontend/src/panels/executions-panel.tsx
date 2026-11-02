@@ -52,7 +52,12 @@ function Actions({ run }: { run: ExecutionDetail }) {
       )}
       {stopped && (
         <Button size="xs" variant="outline" onClick={() => void actions.act("resume")}>
-          Resume
+          {run.step_mode && run.status === "PAUSED" ? "Next step" : "Resume"}
+        </Button>
+      )}
+      {run.step_mode && run.status === "PAUSED" && (
+        <Button size="xs" variant="outline" onClick={() => void actions.runToEnd()}>
+          Run to end
         </Button>
       )}
       {!isTerminal(run.status) && (

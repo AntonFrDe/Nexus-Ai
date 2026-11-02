@@ -19,7 +19,7 @@ export interface ExecutionState {
   run(
     workflowId: string,
     input: unknown,
-    options?: { mode?: string; node_id?: string; allow_paid?: boolean },
+    options?: { mode?: string; node_id?: string; allow_paid?: boolean; step?: boolean },
   ): Promise<void>;
   select(id: string): Promise<void>;
   clear(): void;
@@ -27,6 +27,8 @@ export interface ExecutionState {
   act(action: "pause" | "resume" | "cancel"): Promise<void>;
   decide(decision: "approved" | "rejected"): Promise<void>;
   retry(): Promise<void>;
+  runToEnd(): Promise<void>;
+  replay(overrides: Record<string, unknown>, allowPaid: boolean): Promise<void>;
 }
 
 export type ExecutionStore = StoreApi<ExecutionState>;
@@ -133,6 +135,25 @@ export function createExecutionStore(
           await client.decideExecution(id, decision);
           follow(id);
           await reload(id);
+        });
+      },
+
+      async runToEnd() {
+        const id = get().current?.id;
+        if (!id) return;
+        await guarded(async () => {
+          await client.runToEnd(id);
+          follow(id);
+          await reload(id);
+        });
+      },
+
+      async replay(overrides, allowPaid) {
+        const id = get().current?.id;
+        if (!id) return;
+        await guarded(async () => {
+          show(await client.replayExecution(id, overrides, allowPaid));
+          await get().refresh();
         });
       },
 

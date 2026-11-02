@@ -23,7 +23,9 @@ import {
 import { PanelRegistry, type PanelDefinition } from "@/core/panels/registry";
 import { AgentsPanel } from "@/panels/agents-panel";
 import { AppearancePanel } from "@/panels/appearance-panel";
+import { CostAnalyticsPanel } from "@/panels/cost-analytics-panel";
 import { ExecutionLogsPanel } from "@/panels/execution-logs-panel";
+import { ExecutionTracePanel } from "@/panels/execution-trace-panel";
 import { ExecutionsPanel } from "@/panels/executions-panel";
 import { LayoutInspectorPanel } from "@/panels/layout-inspector-panel";
 import { ModelRegistryPanel } from "@/panels/model-registry-panel";
@@ -32,7 +34,6 @@ import { NodeLibraryPanel } from "@/panels/node-library-panel";
 import { NotesPanel } from "@/panels/notes-panel";
 import { PanelLibraryPanel } from "@/panels/panel-library-panel";
 import { PluginsPanel } from "@/panels/plugins-panel";
-import { plannedPanel } from "@/panels/planned-panel";
 import { ProblemsPanel } from "@/panels/problems-panel";
 import { SystemStatusPanel } from "@/panels/system-status-panel";
 import { WorkflowCanvasPanel } from "@/panels/workflow-canvas-panel";
@@ -167,22 +168,22 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     icon: Puzzle,
     component: PluginsPanel,
   },
-  plannedPanel({
+  {
     id: "execution-trace",
     title: "Execution Trace",
-    description: "Node-by-node trace with state inspection.",
+    description: "Node timeline, failure cause, state between nodes, replay and comparison.",
     category: EXECUTION,
     icon: Route,
-    milestone: 7,
-  }),
-  plannedPanel({
+    component: ExecutionTracePanel,
+  },
+  {
     id: "cost-analytics",
     title: "Cost Analytics",
-    description: "Tokens, cost and model usage over time.",
+    description: "Runs, tokens, cost and errors over time, and Langfuse export.",
     category: EXECUTION,
     icon: Coins,
-    milestone: 7,
-  }),
+    component: CostAnalyticsPanel,
+  },
   {
     id: "model-registry",
     title: "Model Registry",

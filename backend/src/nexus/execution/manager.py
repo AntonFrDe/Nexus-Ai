@@ -8,6 +8,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
+from nexus.core.logs import log_event
 from nexus.execution.agent_nodes import AgentServices
 from nexus.execution.compiler import GraphCompiler, Selection, initial_state
 from nexus.execution.context import NodeFailure, NodeHandler, NoHooks
@@ -94,13 +95,16 @@ def _included(graph: WorkflowGraph, selection: Selection) -> set[str]:
 class _Hooks:
     """Connects one run's graph to its records and live events."""
 
-    def __init__(self, manager: "ExecutionManager", execution_id: str, paid: bool) -> None:
+    def __init__(
+        self, manager: "ExecutionManager", execution_id: str, paid: bool, step: bool
+    ) -> None:
         self.manager = manager
         self.execution_id = execution_id
         self.paid = paid
+        self.step = step
 
     def pause_requested(self) -> bool:
-        return self.execution_id in self.manager.pause_requests
+        return self.step or self.execution_id in self.manager.pause_requests
 
     def allow_paid(self) -> bool:
         return self.paid
@@ -154,11 +158,14 @@ class ExecutionManager:
         load_workflow,
         max_concurrent: int = 4,
         agents: AgentServices | None = None,
+        exporter=None,
     ) -> None:
         self.store = store
         self.registry = registry
         self.handlers = handlers
         self.agents = agents
+        self.exporter = exporter
+        self.exports: set[asyncio.Task[None]] = set()
         self.checkpointer = checkpointer
         self.load_workflow = load_workflow
         self.compiler = GraphCompiler(registry, handlers, self._run_child)
@@ -182,6 +189,7 @@ class ExecutionManager:
 
     async def _set_status(self, execution_id: str, status: S, **fields: Any) -> None:
         await self.store_call("transition", execution_id, status, **fields)
+        log_event("execution_status", execution_id=execution_id, status=status.value)
         await self.emit(execution_id, "status", None, {"status": status.value})
 
     def _config(self, execution_id: str) -> dict[str, Any]:
@@ -193,7 +201,7 @@ class ExecutionManager:
     def _graph_for(self, execution) -> CompiledStateGraph:
         graph = WorkflowGraph.model_validate(execution.graph)
         selection = Selection(execution.entry_node, execution.mode == "node")
-        hooks = _Hooks(self, execution.id, execution.allow_paid)
+        hooks = _Hooks(self, execution.id, execution.allow_paid, execution.step_mode)
         return self.compiler.build(graph, hooks, self.checkpointer, selection)
 
     async def _run_child(self, workflow_id: str, value: Any, depth: int) -> Any:
@@ -225,6 +233,9 @@ class ExecutionManager:
         mode: str = "full",
         node_id: str | None = None,
         allow_paid: bool = False,
+        step: bool = False,
+        replay_of: str | None = None,
+        overrides: dict[str, Any] | None = None,
     ):
         if mode != "full" and node_id is None:
             raise ActionRefused("This mode needs a node")
@@ -241,6 +252,9 @@ class ExecutionManager:
             mode=mode,
             entry_node=node_id,
             allow_paid=allow_paid,
+            step_mode=step,
+            replay_of=replay_of,
+            overrides=overrides,
             graph=graph.model_dump(mode="json"),
             input=value,
         )
@@ -359,6 +373,19 @@ class ExecutionManager:
             ),
         }
         await self._set_status(execution_id, status, ended_at=ended, metrics=metrics, **fields)
+        if self.exporter is not None:
+            # Export must never delay, change or fail the run it describes.
+            task = asyncio.create_task(self._export(execution_id))
+            self.exports.add(task)
+            task.add_done_callback(self.exports.discard)
+
+    async def _export(self, execution_id: str) -> None:
+        try:
+            execution = await self.store_call("get", execution_id)
+            rows = await self.store_call("nodes", execution_id)
+            await self.exporter.export(execution, rows)
+        except Exception as error:
+            await self.emit(execution_id, "export_failed", None, {"error": str(error)[:300]})
 
     # Actions
 
@@ -396,11 +423,14 @@ class ExecutionManager:
         await self._set_status(execution.id, S.RUNNING, ended_at=None, error=None, error_node=None)
         self._launch(execution.id, payload)
 
-    async def resume(self, execution_id: str) -> None:
+    async def resume(self, execution_id: str, run_to_end: bool = False) -> None:
         execution = await self.store_call("get", execution_id)
         if execution.status not in (S.PAUSED, S.FAILED, S.CANCELLED):
             raise ActionRefused(f"Cannot resume a run that is {execution.status}")
         self.pause_requests.discard(execution_id)
+        if run_to_end and execution.step_mode:
+            await self.store_call("update", execution_id, step_mode=False)
+            execution.step_mode = False
         await self._continue(execution, None)
 
     async def decide(self, execution_id: str, decision: str) -> None:
@@ -434,6 +464,46 @@ class ExecutionManager:
                 }
             )
         return history
+
+    async def checkpoint_state(self, execution_id: str, checkpoint_id: str) -> dict[str, Any]:
+        execution = await self.store_call("get", execution_id)
+        config = self._config(execution_id)
+        config["configurable"]["checkpoint_id"] = checkpoint_id
+        snapshot = await self._graph_for(execution).aget_state(config)
+        if not snapshot.values:
+            raise ActionRefused("Unknown checkpoint")
+        return {
+            "checkpoint_id": checkpoint_id,
+            "next": list(snapshot.next),
+            "outputs": snapshot.values.get("outputs", {}),
+            "variables": snapshot.values.get("variables", {}),
+            "errors": snapshot.values.get("errors", {}),
+        }
+
+    async def replay(
+        self, execution_id: str, overrides: dict[str, dict[str, Any]], allow_paid: bool
+    ):
+        """A new run from the recorded definition and input. The original is never touched."""
+        source = await self.store_call("get", execution_id)
+        graph = WorkflowGraph.model_validate(source.graph)
+        known = {node.id: node for node in graph.nodes}
+        unknown = set(overrides) - set(known)
+        if unknown:
+            raise ActionRefused(f"Unknown nodes: {sorted(unknown)}")
+        for node_id, config in overrides.items():
+            known[node_id].config = {**known[node_id].config, **config}
+        return await self.start(
+            graph,
+            workflow_id=source.workflow_id,
+            workflow_name=source.workflow_name,
+            workflow_version=source.workflow_version,
+            value=source.input,
+            mode=source.mode,
+            node_id=source.entry_node,
+            allow_paid=allow_paid,
+            replay_of=source.id,
+            overrides=overrides or None,
+        )
 
     async def restore(self, execution_id: str, checkpoint_id: str) -> None:
         """Continues from an earlier checkpoint, re-running everything after it."""

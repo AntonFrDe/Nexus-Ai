@@ -9,6 +9,8 @@ export const execution = z.object({
   status: z.string(),
   mode: z.string(),
   allow_paid: z.boolean(),
+  step_mode: z.boolean(),
+  replay_of: z.string().nullable(),
   entry_node: z.string().nullable(),
   error: z.string().nullable(),
   error_node: z.string().nullable(),

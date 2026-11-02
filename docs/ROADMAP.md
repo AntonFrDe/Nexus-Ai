@@ -184,11 +184,25 @@ Known limitations:
 - Enabling or disabling needs a page reload.
 - Panels are single HTML files.
 
-## Milestone 7: Debugging and observability
+## Milestone 7: Debugging and observability (complete, Langfuse unverified)
 
-Execution inspector, logs, Langfuse, cost monitoring, replay, comparison.
+| Item | State |
+|---|---|
+| Execution Trace: timeline, failure cause, state between nodes | Done |
+| Step-through runs | Done |
+| Replay with changes, marked apart from recorded runs | Done |
+| Run comparison | Done |
+| Cost and token analytics, with unknown prices shown as unpriced | Done |
+| Structured JSON logs in `~/.nexus/logs`, without prompts or outputs | Done |
+| Langfuse export over OTLP, off by default | Written, tested against a local stand-in only |
 
-Acceptance: identify which node failed and why from the full lifecycle of an execution.
+**Acceptance:** a user can inspect a run's lifecycle and see which node failed and why.
+
+Known limitations:
+
+- No real Langfuse server has received an export, and OTLP attribute names are unconfirmed.
+- Replay in the interface changes LLM Agent model and temperature only; the API accepts any setting.
+- Restoring a checkpoint has no interface yet.
 
 ## Milestone 8: Hardening
 

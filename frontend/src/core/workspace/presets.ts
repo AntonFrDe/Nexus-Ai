@@ -27,7 +27,8 @@ export const PRESETS: Record<string, Preset> = {
   ],
   "debug-studio": [
     { panel: "execution-trace" },
-    { panel: "layout-inspector", relativeTo: "execution-trace", direction: "right", size: 340 },
+    { panel: "execution-list", relativeTo: "execution-trace", direction: "right", size: 420 },
+    { panel: "layout-inspector", relativeTo: "execution-list", direction: "within" },
     { panel: "system-status", relativeTo: "layout-inspector", direction: "within" },
     { panel: "execution-logs", relativeTo: "execution-trace", direction: "below", size: 220 },
   ],

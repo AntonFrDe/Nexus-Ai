@@ -41,6 +41,7 @@ class Completion:
     input_tokens: int | None
     output_tokens: int | None
     latency_ms: int
+    cost_usd: float | None = None
 
 
 class ProviderError(Exception):

@@ -14,6 +14,7 @@ from nexus.agents.service import AgentStore
 from nexus.core.auth import TokenAuthMiddleware, issue_token
 from nexus.core.config import Settings
 from nexus.core.db import create_db_engine, run_migrations
+from nexus.core.logs import LOGGER, attach_log_file
 from nexus.execution.agent_nodes import AgentServices
 from nexus.execution.handlers import BUILT_IN_HANDLERS
 from nexus.execution.manager import ExecutionManager
@@ -22,6 +23,8 @@ from nexus.execution.routes import router as executions_router
 from nexus.execution.store import ExecutionStore
 from nexus.nodes.catalog import create_node_registry
 from nexus.nodes.routes import router as nodes_router
+from nexus.observability.langfuse import LangfuseExporter
+from nexus.observability.routes import router as observability_router
 from nexus.plugins.routes import EXCEPTION_HANDLERS as PLUGIN_EXCEPTION_HANDLERS
 from nexus.plugins.routes import router as plugins_router
 from nexus.plugins.service import PluginManager
@@ -78,6 +81,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.provider_registry,
         )
         app.state.plugins.load_enabled()
+        app.state.langfuse = LangfuseExporter(app.state.session_factory, app.state.secrets)
+        log_handler = attach_log_file(settings.data_dir)
 
         def load_workflow(workflow_id: str) -> WorkflowGraph:
             with app.state.session_factory() as session:
@@ -99,11 +104,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 load_workflow,
                 settings.max_concurrent_executions,
                 agent_services,
+                app.state.langfuse,
             )
             app.state.execution_manager = manager
             await manager.recover()
             yield
             await manager.shutdown()
+        LOGGER.removeHandler(log_handler)
+        log_handler.close()
         engine.dispose()
 
     app = FastAPI(title="NEXUS", version=__version__, lifespan=lifespan)
@@ -138,6 +146,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(providers_router)
     api.include_router(agents_router)
     api.include_router(plugins_router)
+    api.include_router(observability_router)
     app.include_router(api)
     return app
 

@@ -13,14 +13,20 @@ from nexus.execution.schemas import (
     ApprovalDecision,
     CheckpointRead,
     CheckpointRestore,
+    CheckpointState,
     EventRead,
+    ExecutionComparison,
     ExecutionDetail,
     ExecutionStart,
     ExecutionSummary,
+    ExecutionTrace,
     NodeExecutionRead,
+    ReplayRequest,
+    ResumeRequest,
 )
 from nexus.execution.states import TERMINAL, ExecutionStatus, InvalidTransition
 from nexus.execution.store import ExecutionNotFound
+from nexus.execution.trace import build_trace, compare_executions
 from nexus.workflows import service
 from nexus.workflows.models import WorkflowVersion
 from nexus.workflows.schemas import WorkflowGraph
@@ -85,6 +91,7 @@ async def start_execution(
         mode=body.mode,
         node_id=body.node_id,
         allow_paid=body.allow_paid,
+        step=body.step,
     )
     return await _detail(manager, execution.id)
 
@@ -96,6 +103,16 @@ async def list_executions(
     manager: ExecutionManager = Depends(manager_of),
 ):
     return await manager.store_call("recent", workflow_id, limit)
+
+
+@router.get("/executions/compare", response_model=ExecutionComparison)
+async def compare(left: str, right: str, manager: ExecutionManager = Depends(manager_of)):
+    return compare_executions(
+        await manager.store_call("get", left),
+        await manager.store_call("nodes", left),
+        await manager.store_call("get", right),
+        await manager.store_call("nodes", right),
+    )
 
 
 @router.get("/executions/{execution_id}", response_model=ExecutionDetail)
@@ -153,14 +170,32 @@ async def stream_events(
     )
 
 
+@router.get("/executions/{execution_id}/trace", response_model=ExecutionTrace)
+async def trace(execution_id: str, manager: ExecutionManager = Depends(manager_of)):
+    execution = await manager.store_call("get", execution_id)
+    return build_trace(execution, await manager.store_call("nodes", execution_id))
+
+
+@router.post("/executions/{execution_id}/replay", response_model=ExecutionDetail, status_code=202)
+async def replay(
+    execution_id: str, body: ReplayRequest, manager: ExecutionManager = Depends(manager_of)
+):
+    execution = await manager.replay(execution_id, body.overrides, body.allow_paid)
+    return await _detail(manager, execution.id)
+
+
 @router.post("/executions/{execution_id}/pause", status_code=202)
 async def pause(execution_id: str, manager: ExecutionManager = Depends(manager_of)) -> None:
     await manager.pause(execution_id)
 
 
 @router.post("/executions/{execution_id}/resume", status_code=202)
-async def resume(execution_id: str, manager: ExecutionManager = Depends(manager_of)) -> None:
-    await manager.resume(execution_id)
+async def resume(
+    execution_id: str,
+    body: ResumeRequest = Body(default=ResumeRequest()),
+    manager: ExecutionManager = Depends(manager_of),
+) -> None:
+    await manager.resume(execution_id, body.run_to_end)
 
 
 @router.post("/executions/{execution_id}/cancel", status_code=202)
@@ -197,6 +232,15 @@ async def retry(execution_id: str, manager: ExecutionManager = Depends(manager_o
 @router.get("/executions/{execution_id}/checkpoints", response_model=list[CheckpointRead])
 async def checkpoints(execution_id: str, manager: ExecutionManager = Depends(manager_of)):
     return await manager.checkpoints(execution_id)
+
+
+@router.get(
+    "/executions/{execution_id}/checkpoints/{checkpoint_id}", response_model=CheckpointState
+)
+async def checkpoint_state(
+    execution_id: str, checkpoint_id: str, manager: ExecutionManager = Depends(manager_of)
+):
+    return await manager.checkpoint_state(execution_id, checkpoint_id)
 
 
 @router.post("/executions/{execution_id}/restore", status_code=202)

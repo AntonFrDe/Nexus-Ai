@@ -167,6 +167,10 @@ so the proxy refuses its requests, and the page policy sets `connect-src 'none'`
 **T-041: Provider contributions are data.** A preset cannot touch keys, because no plugin code runs
 for it.
 
+**T-042: Langfuse through OTLP, without its SDK.** Its legacy ingestion API ends on Langfuse Cloud on
+2026-11-16. A small HTTP exporter avoids another large dependency, sends metadata only by default,
+and can never change a run's result.
+
 ## External integrations checked
 
 | Integration | Finding | Consequence |

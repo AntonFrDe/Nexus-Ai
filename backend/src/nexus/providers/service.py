@@ -1,5 +1,6 @@
 import asyncio
 import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -286,6 +287,19 @@ class ProviderRegistry:
             found = self._resolve(session, reference)
             return bool(found) and self._type(found[0].type).paid
 
+    @staticmethod
+    def _cost(
+        answer: Completion, prices: tuple[float | None, float | None], local: bool
+    ) -> float | None:
+        """None means unknown, which analytics must not count as free."""
+        if local:
+            return 0.0
+        input_price, output_price = prices
+        tokens = (answer.input_tokens, answer.output_tokens)
+        if None in prices or None in tokens:
+            return None
+        return (tokens[0] * input_price + tokens[1] * output_price) / 1_000_000
+
     def reference_problem(self, reference: str) -> str | None:
         with self.factory() as session:
             found = self._resolve(session, reference)
@@ -311,6 +325,7 @@ class ProviderRegistry:
             provider, model = found
             kind = self._type(provider.type)
             provider_id, model_id = provider.id, model.model_id
+            prices = (model.input_cost_per_mtok, model.output_cost_per_mtok)
             capabilities = effective(model.capabilities, model.capability_overrides)
             merged = self._checked_defaults(capabilities, {**model.defaults, **parameters})
         if kind.paid and not allow_paid:
@@ -319,7 +334,8 @@ class ProviderRegistry:
         limit = 1 if kind.local else 4
         semaphore = self.limits.setdefault(provider_id, asyncio.Semaphore(limit))
         async with semaphore:
-            return await self.adapter.complete(connection, model_id, prompt, merged, system)
+            answer = await self.adapter.complete(connection, model_id, prompt, merged, system)
+        return replace(answer, cost_usd=self._cost(answer, prices, kind.local))
 
     async def test_model(self, model_id: str, request: ModelTest) -> ModelTestResult:
         """Makes one real, short call. A paid provider needs explicit confirmation first."""

@@ -60,6 +60,14 @@ class ExecutionStore:
             for name, value in fields.items():
                 setattr(execution, name, value)
 
+    def update(self, execution_id: str, **fields: Any) -> None:
+        with self.factory() as session, session.begin():
+            execution = session.get(Execution, execution_id)
+            if execution is None:
+                raise ExecutionNotFound(execution_id)
+            for name, value in fields.items():
+                setattr(execution, name, value)
+
     def nodes(self, execution_id: str) -> list[NodeExecution]:
         query = (
             select(NodeExecution)

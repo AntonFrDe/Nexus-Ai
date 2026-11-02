@@ -2,7 +2,7 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 6 of 8.** Workflows run with live status, approval and recovery, call local
+**Status: Milestone 7 of 8.** Workflows run with live status, approval and recovery, call local
 models through Ollama, and can be extended by sandboxed plugins. Cloud runtimes have never made a
 real call, and agents have no tools yet. See [the roadmap](docs/ROADMAP.md).
 
