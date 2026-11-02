@@ -100,14 +100,13 @@ Known limitations:
 | Connection and model tests, with confirmation before any paid call | Done |
 | Model Registry panel, model suggestions in the inspector | Done |
 
-**Acceptance: not fully verified.** "Configure and test a local model and an external model" works
-through the real adapter, real LiteLLM and real HTTP, but against local test servers. Ollama is not
-installed on the development machine and no provider key was used, so **no real model has answered
-yet**.
+**Acceptance: local verified, external not.** Real Ollama models were discovered and answered on
+2026-11-02. No external provider has been tried, because no key was used; that path has only run
+against a local test server.
 
 Known limitations:
 
-- Anthropic, OpenAI, Gemini, Mistral, OpenRouter, LM Studio and real Ollama are untested. Discovery
+- Anthropic, OpenAI, Gemini, Mistral, OpenRouter and LM Studio are untested. Discovery
   formats come from documentation.
 - Capabilities come from LiteLLM's tables by provider, so a local model may be listed with a feature
   it lacks. Testing a capability for real, and correcting it with an override, is manual.
@@ -137,8 +136,8 @@ after the first user action. This is the likely cause of the unexplained Milesto
 | Per-resource limits (one call at a time per local provider, Claude and Antigravity) | Done |
 | Agents panel | Done |
 
-**Acceptance: not fully verified.** Compatible agents run in workflows through the native runtime,
-against a local test server. The Claude and Antigravity adapters were checked only against the
+**Acceptance: native verified, cloud runtimes not.** A two-agent workflow produced a real roadmap
+with `qwen3.8:27b` through Ollama. The Claude and Antigravity adapters were checked only against the
 installed SDKs' option names, because no key was available.
 
 Known limitations:
