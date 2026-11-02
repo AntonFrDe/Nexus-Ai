@@ -13,7 +13,14 @@ class Settings(BaseSettings):
     port: int = 8000
     # Rejecting unknown Host headers blocks DNS-rebinding against the local API.
     allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
+    # Fixed only by tests; otherwise each launch issues its own token.
+    api_token: str | None = None
+    max_concurrent_executions: int = 4
 
     @property
     def database_path(self) -> Path:
         return self.data_dir / "nexus.db"
+
+    @property
+    def checkpoints_path(self) -> Path:
+        return self.data_dir / "checkpoints.db"

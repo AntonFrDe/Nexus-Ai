@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 
+from nexus.execution.expressions import ExpressionError, check_syntax
 from nexus.nodes.catalog import RUNTIME_FIELDS
 from nexus.nodes.config_model import validate_config
 from nexus.nodes.registry import NodeRegistry, ports_compatible
@@ -38,6 +39,21 @@ def _check_nodes(graph: WorkflowGraph, types: dict[str, NodeType | None]) -> lis
             issues.append(
                 _error("invalid_config", f"{name}: {message}", node_id=node.id, field=field)
             )
+        for spec in node_type.fields:
+            value = node.config.get(spec.name)
+            if spec.language != "expression" or not isinstance(value, str) or not value:
+                continue
+            try:
+                check_syntax(value)
+            except ExpressionError as error:
+                issues.append(
+                    _error(
+                        "invalid_expression",
+                        f"{name}: {spec.label}: {error}",
+                        node_id=node.id,
+                        field=spec.name,
+                    )
+                )
         for field, message in validate_config("runtime", RUNTIME_FIELDS, node.runtime):
             issues.append(
                 _error("invalid_runtime", f"{name}: {message}", node_id=node.id, field=field)

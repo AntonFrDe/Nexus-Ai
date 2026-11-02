@@ -86,7 +86,7 @@ routing:
 
 | Milestone | Addition |
 |---|---|
-| 3 | Events carry enough to drive escalation: test results, attempts, the model that really ran. Per-resource concurrency limits |
+| 3 | Done in part: attempts and failures are recorded. The model used and per-resource limits come with Milestone 4 |
 | 4 | Abstract model IDs resolved per account, availability checks, Ollama first, budget rules |
 | 5 | `claude-code` and `antigravity` runtimes with declared capabilities, role and profile definitions, worktree isolation for writing agents |
 | 5 or later | Router itself, and the Model Router node gaining profile support |

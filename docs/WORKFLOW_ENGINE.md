@@ -1,7 +1,6 @@
 # Workflow engine
 
-**Status: the document format and validator exist. Execution is design only** and will be checked
-against LangGraph itself in Milestone 3.
+**Status: implemented for logic and data nodes.** Agent, model and tool nodes have no handlers yet.
 
 ## Principles
 
@@ -91,19 +90,25 @@ stateDiagram-v2
   WAITING_FOR_APPROVAL --> CANCELLED
 ```
 
+## Expressions
+
+Conditions use a small parsed language: comparisons, `and`, `or`, `not`, `in`, `contains`, literals
+and dotted paths. Roots are `input`, `workflow`, `variables` and `outputs`; a bare name reads from
+the node's input, as in `score > 0.8`. Data Transform fills `{{expression}}` slots in a JSON template.
+
 ## Mapping onto LangGraph
 
 | Requirement | Intended mechanism |
 |---|---|
 | Sequence, branching | Edges and conditional edges |
-| Parallel, merge | Fan-out with state reducers |
-| Loops | Cycles with an enforced recursion limit |
-| Nested workflows | Subgraphs |
-| Human approval, pause | Interrupts |
+| Parallel, merge | Fan-out with state reducers; Merge uses `defer=True` |
+| Loops | Cycles through a Loop node, with its limit and a global recursion limit |
+| Nested workflows | A separate graph invoked by the node, five levels deep at most |
+| Human approval, pause | Interrupts; pause is checked at node entry |
 | Resume, checkpoint restore | SQLite checkpointer by thread |
-| Retry | Node retry policies |
+| Retry, timeout | Our node wrapper, so each attempt is recorded |
 
-Each row needs confirmation against the LangGraph documentation during Milestone 3.
+Each row is exercised by `backend/tests/test_execution.py`.
 
 ## Agent runtimes
 

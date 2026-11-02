@@ -20,8 +20,10 @@ flowchart LR
   WS --> DB[(SQLite ~/.nexus/nexus.db)]
   ST --> DB
   WF --> DB
-  API -.planned.-> Engine[LangGraph engine]
-  Engine -.-> Adapters[Model, runtime, tool, storage adapters]
+  API --> Engine[Execution manager and LangGraph]
+  Engine --> CK[(checkpoints.db)]
+  Engine --> DB
+  Engine -.planned.-> Adapters[Model, runtime, tool, storage adapters]
   API -.planned.-> Plugins[Isolated plugin processes]
 ```
 
@@ -79,6 +81,12 @@ Required fields are enforced after visibility is resolved, so a hidden field nev
 on unfinished graphs. `/api/workflows/validate` reports semantic issues separately, and the UI shows
 them on nodes, in the Inspector and in Problems. Execution (M3) must refuse an invalid document.
 
+**Execution.** `execution/compiler.py` turns a validated graph into LangGraph nodes built from
+registered handlers. `execution/manager.py` runs each graph as a background task, and owns status
+transitions, pause, approval, recovery and shutdown. `execution/store.py` holds all persistence.
+Events go to the database first, then SSE reads them, so a reconnecting client replays from its last
+position.
+
 ## API
 
 | Method | Path | Purpose |
@@ -99,6 +107,13 @@ them on nodes, in the Inspector and in Problems. Execution (M3) must refuse an i
 | POST | `/api/workflows/import` | Migrate, parse and create |
 | GET, POST | `/api/workflows/{id}/versions` | List, snapshot |
 | POST | `/api/workflows/{id}/versions/{n}/restore` | Restore a snapshot |
+| POST | `/api/workflows/{id}/executions` | Start a run (full, node or from_node) |
+| GET | `/api/executions`, `/api/executions/{id}` | List, read with node records |
+| GET | `/api/executions/{id}/events` | Live SSE, with replay |
+| GET | `/api/executions/{id}/log` | Stored events |
+| POST | `/api/executions/{id}/pause`, `resume`, `cancel`, `retry` | Control a run |
+| POST | `/api/executions/{id}/approval` | Answer a human approval |
+| GET, POST | `/api/executions/{id}/checkpoints`, `restore` | List, restore a checkpoint |
 
 ## Data model
 
@@ -108,7 +123,7 @@ them on nodes, in the Inspector and in Problems. Execution (M3) must refuse an i
 | `app_settings` | built | key, JSON value, timestamp |
 | `workflows` | built | id, name, description, graph JSON, timestamps |
 | `workflow_versions` | built | Immutable snapshots, numbered per workflow, cascade on delete |
-| `executions`, `node_executions`, `sessions` | *planned, M3* | Run records; large artifacts on disk |
+| `executions`, `node_executions`, `execution_events` | built | Runs with their own graph copy, per-node records, ordered events |
 | `providers`, `models`, `secrets` | *planned, M4* | Registry; secrets encrypted and never returned to the browser |
 | `agents`, `agent_versions`, `runtimes` | *planned, M5* | Definitions, kept separate from models and runtimes |
 | `plugins` | *planned, M6* | Installed plugin metadata |
@@ -126,5 +141,8 @@ LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-
   drafts before validation, and free-text fields cannot be inspected for pasted keys.
 - Code fields are stored as text. Nothing evaluates them.
 
-The API has no authentication: any local process can call it. This must be resolved before Milestone
-3 introduces execution ([T-009](TECHNICAL_DECISIONS.md)).
+The API requires a per-launch token, added by the Next proxy for local same-origin callers only
+([T-009](TECHNICAL_DECISIONS.md)). Processes running as the same user are not defended against.
+
+Workflow conditions and templates use a parsed expression language with no `eval`, and paths read
+dictionaries and lists only.

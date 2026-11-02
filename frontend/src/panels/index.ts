@@ -21,6 +21,8 @@ import {
 
 import { PanelRegistry, type PanelDefinition } from "@/core/panels/registry";
 import { AppearancePanel } from "@/panels/appearance-panel";
+import { ExecutionLogsPanel } from "@/panels/execution-logs-panel";
+import { ExecutionsPanel } from "@/panels/executions-panel";
 import { LayoutInspectorPanel } from "@/panels/layout-inspector-panel";
 import { NodeInspectorPanel } from "@/panels/node-inspector-panel";
 import { NodeLibraryPanel } from "@/panels/node-library-panel";
@@ -137,22 +139,22 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     icon: GitBranch,
     component: WorkflowVersionsPanel,
   },
-  plannedPanel({
+  {
     id: "execution-list",
     title: "Executions",
-    description: "Running workflows and execution history.",
+    description: "Run history, live status, approvals and node inputs and outputs.",
     category: EXECUTION,
     icon: ListTree,
-    milestone: 3,
-  }),
-  plannedPanel({
+    component: ExecutionsPanel,
+  },
+  {
     id: "execution-logs",
     title: "Execution Logs",
-    description: "Live structured logs from running workflows.",
+    description: "Live event log of the selected run.",
     category: EXECUTION,
     icon: Logs,
-    milestone: 3,
-  }),
+    component: ExecutionLogsPanel,
+  },
   plannedPanel({
     id: "execution-trace",
     title: "Execution Trace",

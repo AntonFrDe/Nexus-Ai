@@ -44,6 +44,7 @@ EXPRESSION = field(
     "expression",
     "Condition",
     required=True,
+    language="expression",
     description="Declarative expression on state, such as score > 0.8. Never run as Python.",
 )
 HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
@@ -242,7 +243,7 @@ BUILT_IN_NODES: list[NodeType] = [
         inputs=[IN],
         outputs=[port("case_1", "Case 1"), port("case_2", "Case 2"), port("default")],
         fields=[
-            field("value", "Value", required=True),
+            field("value", "Value", required=True, language="expression"),
             field("case_1", "Case 1 equals", required=True),
             field("case_2", "Case 2 equals"),
         ],
@@ -277,6 +278,7 @@ BUILT_IN_NODES: list[NodeType] = [
                 "condition",
                 "While",
                 required=True,
+                language="expression",
                 visible_when=Condition(field="mode", equals=["while"]),
             ),
             field("max_iterations", "Hard limit", FieldKind.NUMBER, minimum=1, default=100),

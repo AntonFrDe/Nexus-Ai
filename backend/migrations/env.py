@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 
 from nexus.core.config import Settings
 from nexus.core.db import Base, sqlite_url
+from nexus.execution import models as _execution_models  # noqa: F401
 from nexus.settings_store import models as _settings_models  # noqa: F401
 from nexus.workflows import models as _workflow_models  # noqa: F401
 from nexus.workspaces import models as _workspace_models  # noqa: F401

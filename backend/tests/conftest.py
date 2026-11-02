@@ -7,13 +7,20 @@ from fastapi.testclient import TestClient
 from nexus.core.config import Settings
 from nexus.main import create_app
 
+TOKEN = "test-token"
+
+
+def authed(settings: Settings, **options) -> TestClient:
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    return TestClient(create_app(settings), headers=headers, **options)
+
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path, allowed_hosts=["testserver"])
+    return Settings(data_dir=tmp_path, allowed_hosts=["testserver"], api_token=TOKEN)
 
 
 @pytest.fixture
 def client(settings: Settings) -> Iterator[TestClient]:
-    with TestClient(create_app(settings)) as test_client:
+    with authed(settings) as test_client:
         yield test_client

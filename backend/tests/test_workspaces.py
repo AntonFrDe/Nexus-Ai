@@ -1,6 +1,5 @@
+from conftest import authed
 from fastapi.testclient import TestClient
-
-from nexus.main import create_app
 
 LAYOUT = {"grid": {"root": {}}, "panels": {"a": {"id": "a"}}, "activeGroup": "1"}
 
@@ -30,14 +29,14 @@ def test_create_then_read(client):
 
 
 def test_layout_and_state_survive_a_restart(settings):
-    with TestClient(create_app(settings)) as first:
+    with authed(settings) as first:
         workspace_id = first_id(first)
         response = first.patch(
             f"/api/workspaces/{workspace_id}",
             json={"layout": LAYOUT, "panel_states": {"notes": {"text": "hi"}}},
         )
         assert response.status_code == 200
-    with TestClient(create_app(settings)) as second:
+    with authed(settings) as second:
         restored = second.get(f"/api/workspaces/{workspace_id}").json()
         assert restored["layout"] == LAYOUT
         assert restored["panel_states"] == {"notes": {"text": "hi"}}

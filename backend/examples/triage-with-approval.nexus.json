@@ -1,0 +1,31 @@
+{
+  "format": "nexus.workflow",
+  "workflow": {
+    "name": "Triage with approval",
+    "description": "Runs today: routes by score, then asks a person before accepting. Try input {\"score\": 0.9}.",
+    "schema_version": 1,
+    "nodes": [
+      {"id": "input", "type": "core.input", "position": {"x": 0, "y": 120}},
+      {"id": "check", "type": "core.if_else", "position": {"x": 280, "y": 120},
+       "config": {"expression": "score > 0.5"}},
+      {"id": "approval", "type": "core.human_approval", "position": {"x": 560, "y": 40},
+       "config": {"prompt": "Accept this result?"}},
+      {"id": "note", "type": "core.logger", "position": {"x": 560, "y": 240},
+       "label": "Log low score"},
+      {"id": "accepted", "type": "core.output", "position": {"x": 840, "y": 0},
+       "config": {"name": "accepted"}},
+      {"id": "declined", "type": "core.stop", "position": {"x": 840, "y": 120},
+       "config": {"status": "failed"}},
+      {"id": "low", "type": "core.output", "position": {"x": 840, "y": 260},
+       "config": {"name": "low_score"}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "input", "source_port": "out", "target": "check", "target_port": "in"},
+      {"id": "e2", "source": "check", "source_port": "true", "target": "approval", "target_port": "in", "label": "high"},
+      {"id": "e3", "source": "check", "source_port": "false", "target": "note", "target_port": "in", "label": "low"},
+      {"id": "e4", "source": "approval", "source_port": "approved", "target": "accepted", "target_port": "in"},
+      {"id": "e5", "source": "approval", "source_port": "rejected", "target": "declined", "target_port": "in"},
+      {"id": "e6", "source": "note", "source_port": "out", "target": "low", "target_port": "in"}
+    ]
+  }
+}

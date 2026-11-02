@@ -15,7 +15,7 @@ Versions were checked against npm and PyPI on 2026-11-02.
 | Tests | vitest / playwright | 5.0.5 / 1.64.1 |
 | Backend | fastapi / pydantic | 0.162.0 / 2.14.2 |
 | Backend | sqlalchemy / alembic | 2.1.x / 1.20.x |
-| Future | langgraph / langgraph-checkpoint-sqlite | 1.2.19 / 3.1.3 |
+| Backend | langgraph / langgraph-checkpoint-sqlite | 1.2.x / 3.1.x |
 | Future | litellm / langfuse | 1.106.6 / 5.1.0 |
 | Future | claude-agent-sdk / google-antigravity | 0.2.176 / 0.1.23 |
 
@@ -49,8 +49,11 @@ future files fail validation, and imports can never collide.
 **T-008: Self-hosted fonts through Fontsource.** `next/font/google` needs network access on a
 first build, which conflicts with local-first operation.
 
-**T-009 (open): Local API authentication.** Binding to loopback does not stop other local processes.
-A per-launch token is needed before the API can run workflows. Blocks Milestone 3.
+**T-009: Launch token, with the Next proxy as the only browser gateway.** Each backend launch writes
+a random token to `~/.nexus/api-token` (mode 0600), required on every API route except health.
+`src/proxy.ts` adds it to requests, but only for a local Host and a same-origin caller. Without that
+check a rebinding domain could use the proxy, whose rewrite would pass the backend's Host filter.
+Processes running as the same user can read the token, so this does not defend against them.
 
 **T-010: `cn` package.** shadcn's current scaffold depends on `cn` (published by shadcn-ui) instead of
 clsx plus tailwind-merge. Kept.
@@ -79,6 +82,25 @@ trip. The backend still rejects duplicates.
 
 **T-018: Cycles need a bounding node.** A cycle is valid only through a node type with
 `bounds_cycles`, currently Loop, so a graph cannot loop forever by accident.
+
+**T-019: Pause at node entry.** Leaving the LangGraph stream cancels parallel tasks in the same step,
+as a probe confirmed. Instead, each node checks for a pause before starting and raises an interrupt,
+so running nodes finish.
+
+**T-020: Approval loops until it has a decision.** LangGraph re-enters an interrupted node and matches
+resume values by position, so a pause released on a node would otherwise answer its approval.
+
+**T-021: Merge nodes use `defer=True`.** A deferred node waits for every active branch, whatever the
+branch lengths, and also works when a conditional branch was not taken.
+
+**T-022: Runs keep a copy of their graph.** Editing or deleting a workflow cannot change what a paused
+run resumes.
+
+**T-023: Unimplemented nodes are refused, never simulated.** A missing handler stops the run before it
+starts and names the milestone. Mock handlers may exist only inside tests.
+
+**T-024: Checkpoints in a separate SQLite file.** LangGraph owns `checkpoints.db`; relational records
+stay in `nexus.db`, behind `ExecutionStore`.
 
 ## External integrations checked
 

@@ -56,12 +56,38 @@ Known limitations:
 
 The routing policy in [MODEL_ROUTING.md](MODEL_ROUTING.md) adds requirements to Milestones 3 to 7.
 
-## Milestone 3: Execution engine (next)
+## Milestone 3: Execution engine (complete)
 
-LangGraph integration, graph compiler, node adapters, execution lifecycle, SSE or WebSocket events,
-checkpointing. Local API authentication (T-009) is a prerequisite.
+| Item | State |
+|---|---|
+| Local API authentication (T-009) | Done |
+| LangGraph compiler, execution lifecycle, background runs | Done |
+| Sequence, branching, parallel and merge, loops, sub-workflows, shared state | Done |
+| Retry, timeout, continue on error, Error Handler | Done, as node runtime settings |
+| Pause, resume, cancel, human approval | Done |
+| Checkpoints, restoration, resume after failure or restart | Done; the restore API has no UI yet |
+| Full, single-node and from-node runs | Done in the API; the UI starts full runs only |
+| Live events over SSE, Executions and Execution Logs panels, status on the canvas | Done |
+| Safe expression language and templates | Done |
 
-Acceptance: a real multi-node workflow executes, fails visibly and resumes after an interruption.
+**Acceptance:** a real multi-node workflow executes, produces outputs, fails visibly and resumes
+after an interruption. Verified by API and browser tests, including a backend restart during a run.
+
+Known limitations:
+
+- **16 of 43 node types run.** Input, Output, IF/ELSE, Switch, Loop, Parallel, Merge, Delay, Stop,
+  Error Handler, Sub-workflow, JSON Parser, Data Transform, Variable, Logger and Human Approval.
+  Everything else is refused before start with a reason, including every agent and model node.
+- Tool nodes with side effects stay unrunnable until permissions are enforced. Permissions stored on
+  nodes therefore have no effect yet.
+- The Retry node itself does not run; retries use each node's runtime settings.
+- Pause takes effect when the next node starts. Running nodes finish first.
+- A node interrupted by a crash runs again on resume, so it must tolerate running twice.
+- One decision answers every pending approval in a run with parallel approvals.
+- Sub-workflows report as one step, and cannot contain Human Approval.
+- Stored node inputs and outputs live in SQLite, with no size limit or separate artifact store yet.
+- Concurrency is one global limit (4 runs); per-resource limits arrive with Milestone 4.
+- Execution comparison and modified replay are Milestone 7.
 
 ## Milestone 4: Model Manager
 

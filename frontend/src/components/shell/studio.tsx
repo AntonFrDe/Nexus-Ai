@@ -9,7 +9,7 @@ import { TitleBar } from "@/components/shell/title-bar";
 import { createPanelRegistry } from "@/panels";
 
 function Shell() {
-  const { store, workflows } = useStudio();
+  const { store, workflows, executions } = useStudio();
   const phase = useWorkspace((state) => state.phase);
   const error = useWorkspace((state) => state.error);
   const appearance = useWorkspace((state) => state.appearance);
@@ -17,7 +17,8 @@ function Shell() {
   useEffect(() => {
     void store.getState().init();
     void workflows.getState().init();
-  }, [store, workflows]);
+    void executions.getState().refresh().catch(() => undefined);
+  }, [store, workflows, executions]);
 
   useEffect(() => {
     document.documentElement.dataset.accent = appearance.accent;

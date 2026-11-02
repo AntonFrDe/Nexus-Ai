@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import authed
 from fastapi.testclient import TestClient
 
-from nexus.main import create_app
 from nexus.nodes.catalog import create_node_registry
 from nexus.workflows.migrations import UnsupportedSchemaVersion, migrate
 from nexus.workflows.schemas import WorkflowGraph
@@ -157,14 +157,14 @@ def test_validate_endpoint(client):
 
 
 def test_save_survives_a_restart(settings):
-    with TestClient(create_app(settings)) as first:
+    with authed(settings) as first:
         document = create(first)
         nodes, edges = chain()
         saved = first.put(
             f"/api/workflows/{document['id']}", json=content(document, nodes=nodes, edges=edges)
         )
         assert saved.status_code == 200
-    with TestClient(create_app(settings)) as second:
+    with authed(settings) as second:
         restored = second.get(f"/api/workflows/{document['id']}").json()
         assert [node["id"] for node in restored["nodes"]] == ["a", "b", "c"]
         assert len(restored["edges"]) == 2

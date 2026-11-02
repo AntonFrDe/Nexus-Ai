@@ -17,6 +17,7 @@ import {
   Grid3x3,
   Group,
   Network,
+  Play,
   Redo2,
   Search,
   Undo2,
@@ -24,8 +25,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ComponentType, type DragEvent, type KeyboardEvent } from "react";
 
-import { useStudio, useWorkflow } from "@/components/shell/providers";
+import { useExecution, useStudio, useWorkflow } from "@/components/shell/providers";
 import { NODE_RENDERERS } from "@/components/workflow/nodes";
+import { isTerminal } from "@/core/workflow/execution-store";
 import { connectionProblem, matchesSearch, type StudioEdge } from "@/core/workflow/graph";
 
 export const NODE_DRAG_TYPE = "application/x-nexus-node";
@@ -56,6 +58,76 @@ function ToolButton({
     >
       <Icon className="size-3.5" />
     </button>
+  );
+}
+
+function RunControls() {
+  const { workflows, executions, dock, registry } = useStudio();
+  const running = useExecution(
+    (state) => !!state.current && !isTerminal(state.current.status),
+  );
+  const canRun = useWorkflow((state) => state.meta !== null);
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [invalid, setInvalid] = useState(false);
+
+  const start = async () => {
+    let input: unknown = null;
+    if (text.trim()) {
+      try {
+        input = JSON.parse(text);
+      } catch {
+        setInvalid(true);
+        return;
+      }
+    }
+    setInvalid(false);
+    setOpen(false);
+    const state = workflows.getState();
+    await state.flush();
+    if (!state.meta) return;
+    await executions.getState().run(state.meta.id, input);
+    const panel = registry.get("execution-list");
+    if (panel && dock) {
+      const existing = dock.getPanel(panel.id);
+      if (existing) existing.api.setActive();
+      else dock.addPanel({ id: panel.id, component: panel.id, title: panel.title });
+    }
+  };
+
+  return (
+    <>
+      <span className="toolbar-divider" />
+      <button
+        type="button"
+        className="text-button"
+        disabled={!canRun || running}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Play className="size-3.5" /> Run
+      </button>
+      {open && (
+        <form
+          className="run-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void start();
+          }}
+        >
+          <input
+            aria-label="Run input as JSON"
+            placeholder="Input as JSON (optional)"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => event.stopPropagation()}
+          />
+          <button type="submit" className="text-button">
+            Start
+          </button>
+          {invalid && <span className="field-error">Not valid JSON</span>}
+        </form>
+      )}
+    </>
   );
 }
 
@@ -142,6 +214,7 @@ function Toolbar() {
           }}
         />
       </label>
+      <RunControls />
     </div>
   );
 }

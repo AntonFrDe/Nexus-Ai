@@ -22,3 +22,23 @@ def test_unknown_host_header_is_rejected(settings):
     settings.allowed_hosts = ["localhost"]
     with TestClient(create_app(settings), base_url="http://evil.example") as client:
         assert client.get("/api/health").status_code == 400
+
+
+def test_api_requires_the_launch_token(settings):
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/api/workspaces").status_code == 401
+        headers = {"Authorization": "Bearer wrong"}
+        assert client.get("/api/workspaces", headers=headers).status_code == 401
+        assert client.get("/api/health").status_code == 200
+        headers = {"Authorization": "Bearer test-token"}
+        assert client.get("/api/workspaces", headers=headers).status_code == 200
+
+
+def test_each_launch_writes_a_private_token(settings):
+    settings.api_token = None
+    with TestClient(create_app(settings)):
+        path = settings.data_dir / "api-token"
+        first = path.read_text()
+        assert path.stat().st_mode & 0o777 == 0o600
+    with TestClient(create_app(settings)):
+        assert path.read_text() != first

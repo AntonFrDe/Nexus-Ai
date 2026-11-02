@@ -2,7 +2,7 @@
 
 import { Handle, NodeResizer, Position, type NodeProps, type NodeTypes } from "@xyflow/react";
 
-import { useWorkflow } from "@/components/shell/providers";
+import { useExecution, useWorkflow } from "@/components/shell/providers";
 import { NodeIcon } from "@/components/workflow/node-icon";
 import { findType, type StudioNode } from "@/core/workflow/graph";
 import type { PortSpec } from "@/core/workflow/types";
@@ -27,16 +27,23 @@ function Ports({ ports, side }: { ports: PortSpec[]; side: "in" | "out" }) {
 
 function ExecutableNode({ id, data, selected }: NodeProps<StudioNode>) {
   const catalog = useWorkflow((state) => state.catalog);
+  const activeWorkflow = useWorkflow((state) => state.meta?.id);
   const severity = useWorkflow((state) => {
     const issues = state.issues.filter((issue) => issue.node_id === id);
     if (issues.some((issue) => issue.severity === "error")) return "error";
     return issues.length ? "warning" : null;
+  });
+  const runStatus = useExecution((state) => {
+    const execution = state.current;
+    if (!execution || execution.workflow_id !== activeWorkflow) return undefined;
+    return execution.nodes.findLast((row) => row.node_id === id)?.status;
   });
   const type = findType(catalog, data.nodeType);
 
   return (
     <div
       className="flow-node"
+      data-run={runStatus?.toLowerCase()}
       data-shape={type?.shape ?? "card"}
       data-selected={selected}
       data-severity={severity ?? undefined}

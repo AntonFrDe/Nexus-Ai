@@ -5,13 +5,19 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 
 import type { PanelRegistry } from "@/core/panels/registry";
+import {
+  createExecutionStore,
+  type ExecutionState,
+  type ExecutionStore,
+} from "@/core/workflow/execution-store";
 import { createWorkflowStore, type WorkflowState, type WorkflowStore } from "@/core/workflow/store";
 import { createWorkspaceStore, type WorkspaceState, type WorkspaceStore } from "@/core/workspace/store";
-import { apiClient } from "@/lib/api";
+import { apiClient, openExecutionEvents } from "@/lib/api";
 
 interface Studio {
   store: WorkspaceStore;
   workflows: WorkflowStore;
+  executions: ExecutionStore;
   registry: PanelRegistry;
   dock: DockviewApi | null;
   setDock(api: DockviewApi): void;
@@ -28,9 +34,10 @@ export function StudioProvider({
 }) {
   const [store] = useState(() => createWorkspaceStore(apiClient));
   const [workflows] = useState(() => createWorkflowStore(apiClient));
+  const [executions] = useState(() => createExecutionStore(apiClient, openExecutionEvents));
   const [dock, setDock] = useState<DockviewApi | null>(null);
   return (
-    <StudioContext.Provider value={{ store, workflows, registry, dock, setDock }}>
+    <StudioContext.Provider value={{ store, workflows, executions, registry, dock, setDock }}>
       {children}
     </StudioContext.Provider>
   );
@@ -48,4 +55,8 @@ export function useWorkspace<T>(selector: (state: WorkspaceState) => T): T {
 
 export function useWorkflow<T>(selector: (state: WorkflowState) => T): T {
   return useStore(useStudio().workflows, selector);
+}
+
+export function useExecution<T>(selector: (state: ExecutionState) => T): T {
+  return useStore(useStudio().executions, selector);
 }

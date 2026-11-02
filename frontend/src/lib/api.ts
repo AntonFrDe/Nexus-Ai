@@ -1,6 +1,13 @@
 import { z } from "zod";
 
 import {
+  execution,
+  executionDetail,
+  executionEvent,
+  type ExecutionDetail,
+  type ExecutionEvent,
+} from "@/core/workflow/execution-types";
+import {
   nodeCatalog,
   validationReport,
   versionSummary,
@@ -114,6 +121,34 @@ export const apiClient = {
     workflowDocument.parse(
       await request(`/workflows/${id}/versions/${number}/restore`, { method: "POST" }),
     ),
+  listExecutions: async () => z.array(execution).parse(await request("/executions")),
+  getExecution: async (id: string) =>
+    executionDetail.parse(await request(`/executions/${id}`)),
+  /** Refused runs are an expected outcome, returned as issues rather than thrown. */
+  startExecution: async (
+    workflowId: string,
+    body: { input: unknown; mode?: string; node_id?: string },
+  ): Promise<ExecutionDetail | { issues: StartIssue[] }> => {
+    const response = await fetch(`/api/workflows/${workflowId}/executions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const content = await response.json();
+    if (response.status === 422 && Array.isArray(content.issues)) {
+      return { issues: content.issues };
+    }
+    if (!response.ok) throw new ApiError(response.status, String(content.detail));
+    return executionDetail.parse(content);
+  },
+  executionAction: async (id: string, action: "pause" | "resume" | "cancel") => {
+    await request(`/executions/${id}/${action}`, { method: "POST" });
+  },
+  decideExecution: async (id: string, decision: "approved" | "rejected") => {
+    await request(`/executions/${id}/approval`, send("POST", { decision }));
+  },
+  retryExecution: async (id: string) =>
+    executionDetail.parse(await request(`/executions/${id}/retry`, { method: "POST" })),
   getSetting: async (key: string): Promise<unknown> => {
     try {
       return z.object({ value: z.unknown() }).parse(await request(`/settings/${key}`)).value;
@@ -128,3 +163,27 @@ export const apiClient = {
 };
 
 export type ApiClient = typeof apiClient;
+
+export interface StartIssue {
+  message: string;
+  node_id: string | null;
+}
+
+export type EventSourceFactory = (
+  executionId: string,
+  onEvent: (event: ExecutionEvent) => void,
+  onEnd: () => void,
+) => () => void;
+
+/** Follows a run. The browser reconnects by itself and replays from the last event it saw. */
+export const openExecutionEvents: EventSourceFactory = (executionId, onEvent, onEnd) => {
+  const source = new EventSource(`/api/executions/${executionId}/events`);
+  source.addEventListener("execution", (message) =>
+    onEvent(executionEvent.parse(JSON.parse(message.data))),
+  );
+  source.addEventListener("end", () => {
+    source.close();
+    onEnd();
+  });
+  return () => source.close();
+};

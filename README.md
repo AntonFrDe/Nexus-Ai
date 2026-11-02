@@ -2,9 +2,10 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 2 of 8.** The persistent workspace and the visual workflow editor work.
-Workflows can be designed, validated and versioned, but **not run**: execution, models and agents do
-not exist yet, and their panels are labeled as such. See [the roadmap](docs/ROADMAP.md).
+**Status: Milestone 3 of 8.** Workflows now really run, with live status, pause, resume, human
+approval and recovery after a restart. Only logic and data nodes can run so far: agents, models and
+side-effect tools are refused with a reason until their milestones. See
+[the roadmap](docs/ROADMAP.md).
 
 ## Run it
 
@@ -44,6 +45,7 @@ End-to-end tests need Chromium once (`cd frontend && npx playwright install chro
 temporary data directory, never `~/.nexus`.
 
 Example workflows are in `backend/examples`; import them from the Workflows panel.
+`triage-with-approval` runs today, while the others need agents.
 
 ## Documentation
 

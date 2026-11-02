@@ -15,7 +15,9 @@ export const PRESETS: Record<string, Preset> = {
     { panel: "node-library", relativeTo: "workflows", direction: "within" },
     { panel: "workflow-versions", relativeTo: "workflow-canvas", direction: "right", size: 360 },
     { panel: "node-inspector", relativeTo: "workflow-versions", direction: "within" },
-    { panel: "problems", relativeTo: "workflow-canvas", direction: "below", size: 180 },
+    { panel: "problems", relativeTo: "workflow-canvas", direction: "below", size: 280 },
+    { panel: "execution-logs", relativeTo: "problems", direction: "within" },
+    { panel: "execution-list", relativeTo: "problems", direction: "within" },
     { panel: "notes", relativeTo: "problems", direction: "within" },
   ],
   "agent-development": [

@@ -2,19 +2,27 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI, Request
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from nexus import __version__
+from nexus.core.auth import TokenAuthMiddleware, issue_token
 from nexus.core.config import Settings
 from nexus.core.db import create_db_engine, run_migrations
+from nexus.execution.handlers import BUILT_IN_HANDLERS
+from nexus.execution.manager import ExecutionManager
+from nexus.execution.routes import EXCEPTION_HANDLERS as EXECUTION_EXCEPTION_HANDLERS
+from nexus.execution.routes import router as executions_router
+from nexus.execution.store import ExecutionStore
 from nexus.nodes.catalog import create_node_registry
 from nexus.nodes.routes import router as nodes_router
 from nexus.settings_store.routes import router as settings_router
 from nexus.workflows import service as workflow_service
 from nexus.workflows.routes import not_found as workflow_not_found
 from nexus.workflows.routes import router as workflows_router
+from nexus.workflows.schemas import WorkflowGraph
 from nexus.workspaces import service as workspace_service
 from nexus.workspaces.routes import not_found
 from nexus.workspaces.routes import router as workspaces_router
@@ -30,14 +38,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.session_factory = sessionmaker(engine, expire_on_commit=False)
         with app.state.session_factory() as session, session.begin():
             workspace_service.seed_defaults(session)
-        yield
+        app.state.api_token = settings.api_token or issue_token(settings.data_dir)
+
+        def load_workflow(workflow_id: str) -> WorkflowGraph:
+            with app.state.session_factory() as session:
+                document = workflow_service.to_document(
+                    workflow_service.get_workflow(session, workflow_id)
+                )
+            return WorkflowGraph.model_validate(
+                document.model_dump(
+                    exclude={"id", "name", "description", "created_at", "updated_at"}
+                )
+            )
+
+        async with AsyncSqliteSaver.from_conn_string(str(settings.checkpoints_path)) as saver:
+            manager = ExecutionManager(
+                ExecutionStore(app.state.session_factory),
+                app.state.node_registry,
+                BUILT_IN_HANDLERS,
+                saver,
+                load_workflow,
+                settings.max_concurrent_executions,
+            )
+            app.state.execution_manager = manager
+            await manager.recover()
+            yield
+            await manager.shutdown()
         engine.dispose()
 
     app = FastAPI(title="NEXUS", version=__version__, lifespan=lifespan)
+    app.add_middleware(TokenAuthMiddleware, state=app.state)
+    # Added last so it runs first: unknown hosts never reach token checks.
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
     app.state.node_registry = create_node_registry()
     app.add_exception_handler(workspace_service.WorkspaceNotFound, not_found)
     app.add_exception_handler(workflow_service.WorkflowNotFound, workflow_not_found)
+    for exception, handler in EXECUTION_EXCEPTION_HANDLERS:
+        app.add_exception_handler(exception, handler)
 
     api = APIRouter(prefix="/api")
 
@@ -51,6 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(settings_router)
     api.include_router(nodes_router)
     api.include_router(workflows_router)
+    api.include_router(executions_router)
     app.include_router(api)
     return app
 
