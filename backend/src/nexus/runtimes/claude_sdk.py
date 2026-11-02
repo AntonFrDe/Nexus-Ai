@@ -30,10 +30,6 @@ def build_options(request: AgentRequest, api_key: str, working_directory: str) -
         options["max_turns"] = request.max_turns
     if request.max_budget_usd is not None:
         options["max_budget_usd"] = request.max_budget_usd
-    if request.session_id:
-        options["resume"] = request.session_id
-    if "reasoning_effort" in request.parameters:
-        options["effort"] = request.parameters["reasoning_effort"]
     return options
 
 
@@ -42,9 +38,7 @@ class ClaudeAgentRuntime(RuntimeAdapter):
     title = "Claude Agent SDK"
     description = "Claude agents, billed to a Claude Console API key. Subscriptions are not used."
     concurrency = 1
-    capabilities = RuntimeCapabilities(
-        cancel=True, session_restore=True, tools=True, structured_output=True
-    )
+    capabilities = RuntimeCapabilities(interruptible=True, tools=True)
 
     async def health_check(self) -> RuntimeHealth:
         if importlib.util.find_spec("claude_agent_sdk") is None:
@@ -56,7 +50,6 @@ class ClaudeAgentRuntime(RuntimeAdapter):
             raise RuntimeError_("The Claude Agent SDK runtime needs an API key")
         from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, query
 
-        text: list[str] = []
         result = None
         model = request.model
         with tempfile.TemporaryDirectory(prefix="nexus-claude-") as directory:
@@ -70,10 +63,9 @@ class ClaudeAgentRuntime(RuntimeAdapter):
             raise RuntimeError_("The SDK ended without a result")
         if result.is_error:
             raise RuntimeError_(result.result or result.subtype)
-        text.append(result.result or "")
         usage = result.usage or {}
         return AgentResult(
-            text="".join(text),
+            text=result.result or "",
             runtime=self.id,
             model=model,
             input_tokens=usage.get("input_tokens"),

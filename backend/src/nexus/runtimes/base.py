@@ -9,7 +9,9 @@ class RuntimeCapabilities(BaseModel):
 
     streaming: bool = False
     pause: bool = False
-    cancel: bool = False
+    # The engine can stop a running call by cancelling its task. This is not the cancel() method,
+    # which would stop a session from outside and which no runtime has yet.
+    interruptible: bool = False
     session_restore: bool = False
     tools: bool = False
     mcp: bool = False

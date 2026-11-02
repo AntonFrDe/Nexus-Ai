@@ -119,7 +119,7 @@ class RuntimeRegistry:
         async with self.limits[runtime_id]:
             try:
                 return await adapter.execute(request, api_key)
-            except UnsupportedCapability:
+            except (UnsupportedCapability, PaidCallRefused):
                 raise
             except Exception as error:
                 # SDK errors can quote their configuration, key included.

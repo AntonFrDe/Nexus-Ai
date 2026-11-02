@@ -279,6 +279,11 @@ class ProviderRegistry:
         )
         return (provider, model) if model else None
 
+    def is_paid(self, reference: str) -> bool:
+        with self.factory() as session:
+            found = self._resolve(session, reference)
+            return bool(found) and self._type(found[0].type).paid
+
     def reference_problem(self, reference: str) -> str | None:
         with self.factory() as session:
             found = self._resolve(session, reference)

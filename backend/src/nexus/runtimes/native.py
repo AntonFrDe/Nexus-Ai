@@ -17,7 +17,7 @@ class NativeRuntime(RuntimeAdapter):
     paid = False
     needs_secret = False
     concurrency = 4
-    capabilities = RuntimeCapabilities(cancel=True)
+    capabilities = RuntimeCapabilities(interruptible=True)
 
     def __init__(self, registry: ProviderRegistry) -> None:
         self.registry = registry

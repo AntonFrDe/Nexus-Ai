@@ -1,9 +1,11 @@
+import asyncio
 from dataclasses import dataclass
 
 import pytest
 from fake_provider import API_KEY, start_fake_provider
 from test_execution import e, n, start, wait_for, workflow
 
+from nexus.providers.service import PaidCallRefused
 from nexus.runtimes.antigravity import build_config
 from nexus.runtimes.base import (
     AgentRequest,
@@ -86,6 +88,22 @@ def test_model_runtime_and_definition_are_separate_fields(client):
     } <= names  # fmt: skip
 
 
+def test_declared_capabilities_match_what_adapters_implement(client):
+    implemented = {"pause": "pause", "session_restore": "restore_session", "streaming": "stream"}
+    for adapter in client.app.state.runtimes.adapters.values():
+        for capability, method in implemented.items():
+            overridden = getattr(type(adapter), method) is not getattr(RuntimeAdapter, method)
+            assert getattr(adapter.capabilities, capability) == overridden, adapter.id
+
+
+def test_an_empty_change_creates_no_version(client):
+    agent = client.post("/api/agents", json={"name": "Same"}).json()
+    url = f"/api/agents/{agent['id']}"
+    assert client.patch(url, json={}).json()["version"] == 1
+    assert client.patch(url, json={"definition": agent["definition"]}).json()["version"] == 1
+    assert client.patch(url, json={"name": "Other"}).json()["version"] == 2
+
+
 def test_every_runtime_declares_capabilities(client):
     runtimes = {item["id"]: item for item in client.get("/api/runtimes").json()}
     assert set(runtimes) == {"native", "claude-agent-sdk", "antigravity-sdk"}
@@ -160,18 +178,42 @@ def test_llm_agent_runs_a_local_model_and_records_what_answered(client, fake):
     assert roles == ["system", "user"]
 
 
-def test_paid_models_need_permission_on_the_run(client, fake):
+def test_paid_models_are_refused_before_a_run_starts_unless_allowed(client, fake):
     reference = paid_model(client, fake)
-    node = n("a", "llm_agent", model=reference)
-    refused = agent_flow(client, node)
-    detail = wait_for(client, refused["id"], "FAILED", timeout=20)
-    assert "does not allow paid calls" in detail["error"]
+    nodes = [n("in", "input"), n("a", "llm_agent", model=reference), n("out", "output")]
+    workflow_id = workflow(client, nodes, [e("in", "a"), e("a", "out")])
+    refused = client.post(f"/api/workflows/{workflow_id}/executions", json={})
+    assert refused.status_code == 422
+    assert "does not allow paid calls" in refused.json()["issues"][0]["message"]
     assert fake.requests == []
 
-    nodes = [n("in", "input"), node, n("out", "output")]
-    workflow_id = workflow(client, nodes, [e("in", "a"), e("a", "out")])
     allowed = start(client, workflow_id, "x", allow_paid=True)
     assert wait_for(client, allowed["id"], "COMPLETED", timeout=20)["output"] == {"result": "ready"}
+
+
+def test_paid_refusal_is_never_turned_into_a_fallback(client, fake):
+    reference = paid_model(client, fake)
+    local = local_model(client, fake)
+    nodes = [n("in", "input"), n("a", "llm_agent", model=local), n("out", "output")]
+    workflow_id = workflow(client, nodes, [e("in", "a"), e("a", "out")])
+    assert client.post(f"/api/workflows/{workflow_id}/executions", json={}).status_code == 202
+    request = AgentRequest("p", reference, allow_paid=False)
+    with pytest.raises(PaidCallRefused):
+        client.portal.call(client.app.state.runtimes.run, "native", request)
+
+
+def test_model_selector_settings_reach_the_model(client, fake):
+    reference = local_model(client, fake)
+    nodes = [
+        n("in", "input"),
+        n("s", "model_selector", model=reference, temperature=0.2),
+        n("a", "llm_agent", model=reference),
+        n("out", "output"),
+    ]
+    edges = [e("in", "a"), e("s", "a", "model", "model"), e("a", "out")]
+    execution = start(client, workflow(client, nodes, edges), "x")
+    wait_for(client, execution["id"], "COMPLETED", timeout=20)
+    assert fake.requests[0]["body"]["options"]["temperature"] == 0.2
 
 
 def test_fallback_uses_the_next_model_and_says_so(client, fake):
@@ -229,6 +271,50 @@ def test_custom_agent_runs_through_its_runtime(client, fake):
     usage = next(row for row in detail["nodes"] if row["node_id"] == "c")["usage"]
     assert usage["agent"] == "Dev"
     assert usage["agent_version"] == 2
+
+
+class _Flaky(RuntimeAdapter):
+    id = "flaky"
+    title = "Flaky"
+    description = "test"
+    paid = False
+    needs_secret = False
+    concurrency = 1
+    calls = 0
+
+    async def execute(self, request: AgentRequest, api_key: str | None) -> AgentResult:
+        type(self).calls += 1
+        if request.model == "hang":
+            await asyncio.sleep(30)
+        if type(self).calls == 1:
+            raise ValueError("first attempt fails")
+        return AgentResult(text="done", runtime=self.id, model=request.model)
+
+
+def flaky_agent(client, **definition) -> str:
+    client.app.state.runtimes.register(_Flaky())
+    _Flaky.calls = 0
+    agent = client.post("/api/agents", json={"name": "Flaky"}).json()
+    full = {"system_prompt": "x", "runtime": "flaky", "model": "m", **definition}
+    client.app.state.agents.update(agent["id"], None, full)
+    return agent["id"]
+
+
+def test_agent_retries_come_from_its_definition(client):
+    agent_id = flaky_agent(client, max_retries=1)
+    execution = agent_flow(client, n("c", "custom_agent", agent_id=agent_id))
+    assert wait_for(client, execution["id"], "COMPLETED", timeout=10)["output"] == {
+        "result": "done"
+    }
+    assert _Flaky.calls == 2
+
+
+def test_agent_timeout_frees_the_runtime(client):
+    agent_id = flaky_agent(client, model="hang", timeout_seconds=0.05)
+    execution = agent_flow(client, n("c", "custom_agent", agent_id=agent_id))
+    detail = wait_for(client, execution["id"], "FAILED", timeout=10)
+    assert "timed out" in detail["error"]
+    assert not client.app.state.runtimes.limits["flaky"].locked()
 
 
 def test_cloud_runtime_without_a_key_is_refused_before_starting(client):

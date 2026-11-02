@@ -68,7 +68,9 @@ function AgentEditor({ agent }: { agent: Agent }) {
   const versions = useAgents((state) => state.versions);
   const [draft, setDraft] = useState(agent.definition);
   const [name, setName] = useState(agent.name);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(agent.definition);
+  const trimmedName = name.trim();
+  const dirty =
+    trimmedName !== agent.name || JSON.stringify(draft) !== JSON.stringify(agent.definition);
 
   return (
     <>
@@ -98,9 +100,6 @@ function AgentEditor({ agent }: { agent: Agent }) {
           value={name}
           maxLength={120}
           onChange={(event) => setName(event.target.value)}
-          onBlur={() => {
-            if (name.trim() && name !== agent.name) void actions.rename(agent.id, name.trim());
-          }}
         />
       </div>
       <FieldForm
@@ -111,8 +110,8 @@ function AgentEditor({ agent }: { agent: Agent }) {
       <div className="registry-actions">
         <Button
           size="xs"
-          disabled={!dirty}
-          onClick={() => void actions.save(agent.id, draft)}
+          disabled={!dirty || !trimmedName}
+          onClick={() => void actions.save(agent.id, trimmedName, draft)}
         >
           Save version
         </Button>

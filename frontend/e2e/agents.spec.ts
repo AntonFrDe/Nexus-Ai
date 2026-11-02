@@ -27,8 +27,14 @@ test("create, version, restore and clone an agent", async ({ page }) => {
   await expect(panel(page).getByLabel("System prompt")).toHaveValue(/Review independently/);
 
   await panel(page).getByLabel("System prompt").fill("Changed prompt");
+  await panel(page).getByLabel("Agent name").fill("Reviewer renamed");
+  await panel(page).getByLabel("System prompt").click();
+  await expect(panel(page).getByLabel("System prompt")).toHaveValue("Changed prompt");
   await panel(page).getByRole("button", { name: "Save version" }).click();
-  await expect(panel(page).locator(".panel-heading .badge")).toHaveText("v2");
+  await expect(panel(page).getByRole("button", { name: "Reviewer renamed" })).toBeVisible();
+  await panel(page).getByLabel("Agent name").fill("Reviewer one");
+  await panel(page).getByRole("button", { name: "Save version" }).click();
+  await expect(panel(page).locator(".panel-heading .badge")).toHaveText("v3");
 
   await panel(page).getByRole("button", { name: "Restore agent version 1" }).click();
   await expect(panel(page).getByLabel("System prompt")).toHaveValue(/Review independently/);

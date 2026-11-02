@@ -30,7 +30,7 @@ class AntigravityRuntime(RuntimeAdapter):
     title = "Antigravity SDK"
     description = "Google agents, billed to a Gemini API key. Subscriptions are not used."
     concurrency = 1
-    capabilities = RuntimeCapabilities(streaming=False, cancel=True)
+    capabilities = RuntimeCapabilities(interruptible=True)
 
     async def health_check(self) -> RuntimeHealth:
         if importlib.util.find_spec("google.antigravity") is None:

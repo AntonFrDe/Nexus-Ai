@@ -16,8 +16,7 @@ export interface AgentState {
   load(): Promise<void>;
   select(id: string | null): Promise<void>;
   create(name: string, template: string | null): Promise<void>;
-  save(id: string, definition: Record<string, unknown>): Promise<void>;
-  rename(id: string, name: string): Promise<void>;
+  save(id: string, name: string, definition: Record<string, unknown>): Promise<void>;
   clone(id: string): Promise<void>;
   remove(id: string): Promise<void>;
   restore(id: string, number: number): Promise<void>;
@@ -78,17 +77,9 @@ export function createAgentStore(client: ApiClient): AgentStore {
         });
       },
 
-      async save(id, definition) {
+      async save(id, name, definition) {
         await guarded(async () => {
-          await client.updateAgent(id, { definition });
-          await refresh();
-          await refreshVersions(id);
-        });
-      },
-
-      async rename(id, name) {
-        await guarded(async () => {
-          await client.updateAgent(id, { name });
+          await client.updateAgent(id, { name, definition });
           await refresh();
           await refreshVersions(id);
         });

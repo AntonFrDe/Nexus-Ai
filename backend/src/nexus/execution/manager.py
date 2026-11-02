@@ -38,6 +38,7 @@ def preflight(
     handlers: dict[str, NodeHandler],
     selection: Selection = Selection(),
     agents: AgentServices | None = None,
+    allow_paid: bool = False,
 ) -> list[Issue]:
     """Everything that stops a run from starting. Warnings never do."""
     partial = selection.entry is not None
@@ -69,7 +70,7 @@ def preflight(
                 )
             )
         elif agents is not None:
-            problem = agents.problem(node)
+            problem = agents.problem(node, allow_paid)
             if problem:
                 issues.append(
                     Issue(
@@ -228,7 +229,7 @@ class ExecutionManager:
         if mode != "full" and node_id is None:
             raise ActionRefused("This mode needs a node")
         selection = Selection(node_id, mode == "node")
-        issues = preflight(graph, self.registry, self.handlers, selection, self.agents)
+        issues = preflight(graph, self.registry, self.handlers, selection, self.agents, allow_paid)
         if issues:
             raise StartRefused(issues)
         execution = await self.store_call(

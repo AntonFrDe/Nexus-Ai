@@ -73,12 +73,14 @@ class AgentStore:
         """Every change is a new immutable version. Drafts may be incomplete until they run."""
         with self.factory() as session, session.begin():
             agent = self._agent(session, agent_id)
-            agent.name = name or agent.name
-            if definition is not None:
-                agent.definition = definition
-            agent.version += 1
-            self._snapshot(session, agent)
-            session.flush()
+            new_name = name or agent.name
+            new_definition = agent.definition if definition is None else definition
+            if new_name != agent.name or new_definition != agent.definition:
+                agent.name = new_name
+                agent.definition = new_definition
+                agent.version += 1
+                self._snapshot(session, agent)
+                session.flush()
             session.expunge(agent)
             return agent
 
