@@ -1,0 +1,32 @@
+{
+  "id": "com.nexus-examples.word-count",
+  "name": "Word Count",
+  "version": "1.0.0",
+  "description": "A custom workflow node that counts words and routes long texts.",
+  "author": "NEXUS examples",
+  "category": "node",
+  "nexus_api": ">=1.0,<2",
+  "entry_points": { "backend": "plugin.py" },
+  "config": [
+    { "name": "long_after", "label": "Long after (words)", "kind": "number", "minimum": 1, "default": 100 }
+  ],
+  "contributions": {
+    "nodes": [
+      {
+        "type": "com.nexus-examples.word-count.count",
+        "title": "Word Count",
+        "category": "Plugins",
+        "description": "Counts words, then follows the short or long output.",
+        "icon": "hash",
+        "inputs": [{ "id": "in", "label": "Text", "type": "text", "required": true }],
+        "outputs": [
+          { "id": "short", "label": "Short", "type": "json" },
+          { "id": "long", "label": "Long", "type": "json" }
+        ],
+        "fields": [
+          { "name": "unit", "label": "Unit label", "kind": "text", "default": "words" }
+        ]
+      }
+    ]
+  }
+}

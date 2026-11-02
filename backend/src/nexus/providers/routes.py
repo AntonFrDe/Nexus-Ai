@@ -38,8 +38,8 @@ def unreachable(_request: Request, exc: ProviderError) -> JSONResponse:
 
 
 @router.get("/provider-types", response_model=list[ProviderType])
-def provider_types():
-    return PROVIDER_TYPES
+def provider_types(request: Request):
+    return [*PROVIDER_TYPES, *registry(request).extra_types.values()]
 
 
 @router.get("/capabilities", response_model=list[str])

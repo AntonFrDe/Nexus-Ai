@@ -27,6 +27,9 @@ class NodeRegistry:
             raise ValueError(f"Node type already registered: {node_type.type}")
         self._types[node_type.type] = node_type
 
+    def unregister(self, type_name: str) -> None:
+        self._types.pop(type_name, None)
+
     def get(self, type_name: str) -> NodeType | None:
         return self._types.get(type_name)
 

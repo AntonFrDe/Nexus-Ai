@@ -158,11 +158,31 @@ Known limitations:
 - `filelock` 3.32.7 has 13 published CVEs fixed in 4.2.1. LiteLLM requires `filelock<4`, so the fix
   waits for LiteLLM. NEXUS does not use it directly.
 
-## Milestone 6: Plugin SDK
+## Milestone 6: Plugin SDK (complete)
 
-Manifests, registry, node, panel and runtime registration, permissions, process isolation.
+| Item | State |
+|---|---|
+| Manifests, version and dependency checks, conflict detection | Done |
+| Install, enable, disable, update, uninstall, plugin configuration | Done, from a local folder |
+| Custom nodes, panels, runtimes, provider presets, tools as nodes | Done |
+| Permissions for files, network, shell and environment | Enforced by the sandbox |
+| Backend isolation | Done on macOS, one sandboxed process per call |
+| Frontend isolation | Done: sandboxed iframe, no network, `postMessage` bridge only |
+| Four example plugins and SDK documentation | Done |
 
-Acceptance: a separately developed plugin installs and registers a working node and panel.
+**Acceptance:** a separately developed example plugin installs and registers a working node and
+workspace panel. Verified in the browser with plugins from `examples/plugins`. A hostile test plugin
+could not read keys or the database, reach the network or start programs.
+
+Known limitations:
+
+- Code plugins run on macOS only; elsewhere they are refused. `sandbox-exec` is deprecated by Apple.
+- The block on keychain services is not verified, and CPU and memory are not limited.
+- Plugins cannot use secrets or call each other, and agents cannot call plugin tools.
+- Storage adapters and themes are not plugin contributions yet.
+- Each call starts a process, so plugins keep no memory between calls.
+- Enabling or disabling needs a page reload.
+- Panels are single HTML files.
 
 ## Milestone 7: Debugging and observability
 

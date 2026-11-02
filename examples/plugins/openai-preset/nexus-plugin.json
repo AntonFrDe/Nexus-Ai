@@ -1,0 +1,21 @@
+{
+  "id": "com.nexus-examples.openai-preset",
+  "name": "Local Gateway Preset",
+  "version": "1.0.0",
+  "description": "A custom model provider: a preset for an OpenAI-style server. Data only, no code.",
+  "author": "NEXUS examples",
+  "category": "provider",
+  "nexus_api": ">=1.0,<2",
+  "contributions": {
+    "providers": [
+      {
+        "id": "com.nexus-examples.openai-preset.gateway",
+        "title": "Local Gateway",
+        "description": "An OpenAI-style server on this machine.",
+        "default_endpoint": "http://127.0.0.1:4000/v1",
+        "auth": "optional",
+        "paid": false
+      }
+    ]
+  }
+}

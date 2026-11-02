@@ -50,11 +50,13 @@ class ProviderRegistry:
         self.factory = factory
         self.secrets = secrets
         self.adapter = adapter
+        # Provider types contributed by plugins.
+        self.extra_types: dict[str, ProviderType] = {}
         # Local servers run one heavy model at a time.
         self.limits: dict[str, asyncio.Semaphore] = {}
 
     def _type(self, type_id: str) -> ProviderType:
-        known = provider_type(type_id)
+        known = self.extra_types.get(type_id) or provider_type(type_id)
         if known is None:
             raise RegistryRefused(f"Unknown provider type: {type_id}")
         return known

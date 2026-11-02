@@ -2,10 +2,9 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 5 of 8.** Workflows can call models and registered agents, and record which
-model answered. Local models work through Ollama. The Claude and Antigravity adapters have never
-made a real call, and agents have no tools yet. See
-[the roadmap](docs/ROADMAP.md).
+**Status: Milestone 6 of 8.** Workflows run with live status, approval and recovery, call local
+models through Ollama, and can be extended by sandboxed plugins. Cloud runtimes have never made a
+real call, and agents have no tools yet. See [the roadmap](docs/ROADMAP.md).
 
 ## Run it
 
@@ -64,6 +63,6 @@ Example workflows are in `backend/examples`; import them from the Workflows pane
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Technical decisions](docs/TECHNICAL_DECISIONS.md)
-- [Plugin system](docs/PLUGIN_SYSTEM.md) (design)
+- [Plugin system](docs/PLUGIN_SYSTEM.md)
 - [Workflow engine](docs/WORKFLOW_ENGINE.md) (design)
 - [Model routing](docs/MODEL_ROUTING.md) (design)

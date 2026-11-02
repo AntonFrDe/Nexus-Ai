@@ -22,6 +22,9 @@ from nexus.execution.routes import router as executions_router
 from nexus.execution.store import ExecutionStore
 from nexus.nodes.catalog import create_node_registry
 from nexus.nodes.routes import router as nodes_router
+from nexus.plugins.routes import EXCEPTION_HANDLERS as PLUGIN_EXCEPTION_HANDLERS
+from nexus.plugins.routes import router as plugins_router
+from nexus.plugins.service import PluginManager
 from nexus.providers.adapter import LiteLLMAdapter
 from nexus.providers.routes import EXCEPTION_HANDLERS as PROVIDER_EXCEPTION_HANDLERS
 from nexus.providers.routes import router as providers_router
@@ -65,6 +68,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         agent_services = AgentServices(
             app.state.provider_registry, app.state.runtimes, app.state.agents
         )
+        handlers = {**BUILT_IN_HANDLERS, **agent_services.handlers()}
+        app.state.plugins = PluginManager(
+            settings,
+            app.state.session_factory,
+            app.state.node_registry,
+            handlers,
+            app.state.runtimes,
+            app.state.provider_registry,
+        )
+        app.state.plugins.load_enabled()
 
         def load_workflow(workflow_id: str) -> WorkflowGraph:
             with app.state.session_factory() as session:
@@ -81,7 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             manager = ExecutionManager(
                 ExecutionStore(app.state.session_factory),
                 app.state.node_registry,
-                {**BUILT_IN_HANDLERS, **agent_services.handlers()},
+                handlers,
                 saver,
                 load_workflow,
                 settings.max_concurrent_executions,
@@ -104,6 +117,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         *EXECUTION_EXCEPTION_HANDLERS,
         *PROVIDER_EXCEPTION_HANDLERS,
         *AGENT_EXCEPTION_HANDLERS,
+        *PLUGIN_EXCEPTION_HANDLERS,
     ):
         app.add_exception_handler(exception, handler)
 
@@ -123,6 +137,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(secrets_router)
     api.include_router(providers_router)
     api.include_router(agents_router)
+    api.include_router(plugins_router)
     app.include_router(api)
     return app
 

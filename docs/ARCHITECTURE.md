@@ -24,7 +24,8 @@ flowchart LR
   Engine --> CK[(checkpoints.db)]
   Engine --> DB
   Engine -.planned.-> Adapters[Model, runtime, tool, storage adapters]
-  API -.planned.-> Plugins[Isolated plugin processes]
+  API --> Plugins[Plugin manager]
+  Plugins --> Sandbox[Sandboxed process per call]
 ```
 
 ## Repository
@@ -97,6 +98,10 @@ and `RuntimeRegistry`, which resolves keys, applies paid and concurrency rules a
 `execution/agent_nodes.py` connects both to the engine and checks readiness before a run starts.
 Operations a runtime lacks raise `UnsupportedCapability`.
 
+**Plugins.** `plugins/service.py` owns the lifecycle and adds contributions to the node, runtime and
+provider registries. `plugins/sandbox.py` starts `plugins/runner.py`, which imports no NEXUS code,
+under `sandbox-exec`. See [PLUGIN_SYSTEM.md](PLUGIN_SYSTEM.md).
+
 ## API
 
 | Method | Path | Purpose |
@@ -127,6 +132,10 @@ Operations a runtime lacks raise `UnsupportedCapability`.
 | POST | `/api/agents/{id}/clone`, `/versions/{n}/restore` | Clone, restore |
 | GET | `/api/agent-templates`, `/api/agent-fields` | Catalogs |
 | GET, PATCH | `/api/runtimes`, `/api/runtimes/{id}` | Capabilities, health, key reference |
+| GET | `/api/plugins`, `/status`, `/panels` | List, platform support, enabled panels |
+| POST | `/api/plugins/install`, `/{id}/enable`, `/{id}/disable` | Lifecycle |
+| PUT, DELETE | `/api/plugins/{id}/config`, `/api/plugins/{id}` | Configure, uninstall |
+| GET | `/api/plugins/{id}/panels/{panel}` | A panel page, under a locked-down policy |
 | POST | `/api/workflows/{id}/executions` | Start a run (full, node or from_node) |
 | GET | `/api/executions`, `/api/executions/{id}` | List, read with node records |
 | GET | `/api/executions/{id}/events` | Live SSE, with replay |
@@ -148,7 +157,7 @@ Operations a runtime lacks raise `UnsupportedCapability`.
 | `providers`, `models` | built | Registry, with a secret name only, and capabilities, overrides, pricing, defaults |
 | `agents`, `agent_versions` | built | Definitions and immutable versions |
 | `runtime_configs` | built | Key reference and enabled flag per runtime |
-| `plugins` | *planned, M6* | Installed plugin metadata |
+| `plugins` | built | Version, enabled flag, accepted permissions, configuration |
 
 LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-sqlite`.
 

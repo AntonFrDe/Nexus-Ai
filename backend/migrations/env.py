@@ -5,6 +5,7 @@ from nexus.agents import models as _agent_models  # noqa: F401
 from nexus.core.config import Settings
 from nexus.core.db import Base, sqlite_url
 from nexus.execution import models as _execution_models  # noqa: F401
+from nexus.plugins import models as _plugin_models  # noqa: F401
 from nexus.providers import models as _provider_models  # noqa: F401
 from nexus.runtimes import service as _runtime_models  # noqa: F401
 from nexus.secrets import models as _secret_models  # noqa: F401

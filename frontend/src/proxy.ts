@@ -14,7 +14,8 @@ function isTrusted(request: NextRequest): boolean {
   const host = request.headers.get("host") ?? "";
   if (!LOCAL_HOSTS.has(hostname(host))) return false;
   const origin = request.headers.get("origin");
-  if (origin && new URL(origin).host !== host) return false;
+  // A sandboxed plugin page sends the origin "null", which is never this app.
+  if (origin && (!URL.canParse(origin) || new URL(origin).host !== host)) return false;
   return request.headers.get("sec-fetch-site") !== "cross-site";
 }
 

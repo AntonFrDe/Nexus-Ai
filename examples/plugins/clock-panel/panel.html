@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { margin: 0; padding: 12px; font: 13px system-ui, sans-serif; color: #e4e6ea; background: #1b1d21; }
+      button { color: inherit; background: #2a2d33; border: 1px solid #3a3e46; border-radius: 3px; padding: 3px 8px; }
+    </style>
+  </head>
+  <body>
+    <p id="time"></p>
+    <p>Workspace: <span id="workspace"></span></p>
+    <p>Count: <span id="count">0</span></p>
+    <button id="add">Add one</button>
+    <p id="api"></p>
+    <script>
+      // The bridge is the whole API: this page has no network and no access to NEXUS itself.
+      const pending = new Map();
+      let nextId = 1;
+      const call = (method, params) =>
+        new Promise((resolve) => {
+          const id = nextId++;
+          pending.set(id, resolve);
+          parent.postMessage({ nexus: true, id, method, params }, "*");
+        });
+      addEventListener("message", ({ data }) => {
+        const resolve = pending.get(data?.id);
+        if (resolve) {
+          pending.delete(data.id);
+          resolve(data.result);
+        }
+      });
+
+      let count = 0;
+      const show = () => (document.getElementById("count").textContent = count);
+      call("getContext").then(({ workspace }) => {
+        document.getElementById("workspace").textContent = workspace;
+      });
+      call("getState").then((state) => {
+        count = state?.count ?? 0;
+        show();
+      });
+      document.getElementById("add").onclick = () => {
+        count += 1;
+        show();
+        call("setState", { count });
+      };
+      const tick = () => (document.getElementById("time").textContent = new Date().toLocaleTimeString());
+      tick();
+      setInterval(tick, 1000);
+      fetch("/api/workflows").then(
+        () => (document.getElementById("api").textContent = "API reachable"),
+        () => (document.getElementById("api").textContent = "API blocked"),
+      );
+    </script>
+  </body>
+</html>

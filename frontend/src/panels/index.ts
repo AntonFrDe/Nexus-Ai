@@ -14,6 +14,7 @@ import {
   Logs,
   NotebookPen,
   Palette,
+  Puzzle,
   Route,
   SlidersHorizontal,
   Workflow,
@@ -30,6 +31,7 @@ import { NodeInspectorPanel } from "@/panels/node-inspector-panel";
 import { NodeLibraryPanel } from "@/panels/node-library-panel";
 import { NotesPanel } from "@/panels/notes-panel";
 import { PanelLibraryPanel } from "@/panels/panel-library-panel";
+import { PluginsPanel } from "@/panels/plugins-panel";
 import { plannedPanel } from "@/panels/planned-panel";
 import { ProblemsPanel } from "@/panels/problems-panel";
 import { SystemStatusPanel } from "@/panels/system-status-panel";
@@ -156,6 +158,14 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     category: EXECUTION,
     icon: Logs,
     component: ExecutionLogsPanel,
+  },
+  {
+    id: "plugins",
+    title: "Plugins",
+    description: "Install, enable and configure plugins.",
+    category: SYSTEM,
+    icon: Puzzle,
+    component: PluginsPanel,
   },
   plannedPanel({
     id: "execution-trace",

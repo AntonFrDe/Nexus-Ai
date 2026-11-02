@@ -1,0 +1,23 @@
+{
+  "id": "com.nexus-examples.slugify-tool",
+  "name": "Slugify",
+  "version": "1.0.0",
+  "description": "A custom tool, delivered as a node in the Tools category.",
+  "author": "NEXUS examples",
+  "category": "tool",
+  "nexus_api": ">=1.0,<2",
+  "entry_points": { "backend": "plugin.py" },
+  "contributions": {
+    "nodes": [
+      {
+        "type": "com.nexus-examples.slugify-tool.slugify",
+        "title": "Slugify",
+        "category": "Tools",
+        "description": "Turns text into a URL-safe slug.",
+        "icon": "link",
+        "inputs": [{ "id": "in", "label": "Text", "type": "text", "required": true }],
+        "outputs": [{ "id": "out", "label": "Slug", "type": "text" }]
+      }
+    ]
+  }
+}

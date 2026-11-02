@@ -1,0 +1,19 @@
+{
+  "id": "com.nexus-examples.clock-panel",
+  "name": "Session Clock",
+  "version": "1.0.0",
+  "description": "A custom workspace panel that keeps a counter through the panel bridge.",
+  "author": "NEXUS examples",
+  "category": "panel",
+  "nexus_api": ">=1.0,<2",
+  "contributions": {
+    "panels": [
+      {
+        "id": "com.nexus-examples.clock-panel.clock",
+        "title": "Session Clock",
+        "description": "Clock and a counter saved with the workspace.",
+        "page": "panel.html"
+      }
+    ]
+  }
+}

@@ -151,6 +151,22 @@ registry removes the key from any error, whatever its type.
 **T-036: Paid calls need a decision per run.** `allow_paid` defaults to false, and retries keep the
 original run's choice.
 
+**T-037: One sandboxed process per plugin call.** Without a long-lived process there is no protocol
+state to protect. It is simple and contains crashes, at the cost of a process start per call.
+
+**T-038: No sandbox, no code.** A plain subprocess could read the master key, so platforms without
+`sandbox-exec` refuse code plugins instead of running them with weaker protection.
+
+**T-039: Read access is denied by area.** A deny-all profile broke Python start-up. Denying `/Users`,
+`/Volumes` and the NEXUS folder, then opening exact paths, passed every escape test. System files
+stay readable.
+
+**T-040: Panels are single files with no route to the API.** A sandboxed iframe has an opaque origin,
+so the proxy refuses its requests, and the page policy sets `connect-src 'none'`.
+
+**T-041: Provider contributions are data.** A preset cannot touch keys, because no plugin code runs
+for it.
+
 ## External integrations checked
 
 | Integration | Finding | Consequence |

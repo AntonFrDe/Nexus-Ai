@@ -7,6 +7,7 @@ import {
   agentVersion,
   runtime,
 } from "@/core/models/agent-types";
+import { plugin, pluginPanel } from "@/core/models/plugin-types";
 import {
   connectionResult,
   modelTestResult,
@@ -223,6 +224,27 @@ export const apiClient = {
     z.array(agentVersion).parse(await request(`/agents/${id}/versions`)),
   restoreAgentVersion: async (id: string, number: number) =>
     agent.parse(await request(`/agents/${id}/versions/${number}/restore`, { method: "POST" })),
+  pluginStatus: async () =>
+    z
+      .object({ api_version: z.string(), sandbox: z.boolean() })
+      .parse(await request("/plugins/status")),
+  listPlugins: async () => z.array(plugin).parse(await request("/plugins")),
+  pluginPanels: async () => z.array(pluginPanel).parse(await request("/plugins/panels")),
+  installPlugin: async (path: string) => {
+    await request("/plugins/install", send("POST", { path }));
+  },
+  enablePlugin: async (id: string, granted: string[]) => {
+    await request(`/plugins/${id}/enable`, send("POST", { granted }));
+  },
+  disablePlugin: async (id: string) => {
+    await request(`/plugins/${id}/disable`, { method: "POST" });
+  },
+  uninstallPlugin: async (id: string) => {
+    await request(`/plugins/${id}`, { method: "DELETE" });
+  },
+  configurePlugin: async (id: string, config: Record<string, unknown>) => {
+    await request(`/plugins/${id}/config`, send("PUT", { config }));
+  },
   getSetting: async (key: string): Promise<unknown> => {
     try {
       return z.object({ value: z.unknown() }).parse(await request(`/settings/${key}`)).value;

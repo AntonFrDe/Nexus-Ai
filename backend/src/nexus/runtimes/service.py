@@ -60,6 +60,10 @@ class RuntimeRegistry:
         self.adapters[adapter.id] = adapter
         self.limits[adapter.id] = asyncio.Semaphore(adapter.concurrency)
 
+    def unregister(self, runtime_id: str) -> None:
+        self.adapters.pop(runtime_id, None)
+        self.limits.pop(runtime_id, None)
+
     def _config(self, runtime_id: str) -> tuple[str | None, bool]:
         with self.factory() as session:
             row = session.get(RuntimeConfig, runtime_id)

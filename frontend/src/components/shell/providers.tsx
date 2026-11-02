@@ -5,6 +5,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 
 import { createAgentStore, type AgentState, type AgentStore } from "@/core/models/agent-store";
+import { createPluginStore, type PluginState, type PluginStore } from "@/core/models/plugin-store";
 import { createModelStore, type ModelState, type ModelStore } from "@/core/models/store";
 import type { PanelRegistry } from "@/core/panels/registry";
 import {
@@ -22,6 +23,7 @@ interface Studio {
   executions: ExecutionStore;
   models: ModelStore;
   agents: AgentStore;
+  plugins: PluginStore;
   registry: PanelRegistry;
   dock: DockviewApi | null;
   setDock(api: DockviewApi): void;
@@ -41,9 +43,10 @@ export function StudioProvider({
   const [executions] = useState(() => createExecutionStore(apiClient, openExecutionEvents));
   const [models] = useState(() => createModelStore(apiClient));
   const [agents] = useState(() => createAgentStore(apiClient));
+  const [plugins] = useState(() => createPluginStore(apiClient));
   const [dock, setDock] = useState<DockviewApi | null>(null);
   return (
-    <StudioContext.Provider value={{ store, workflows, executions, models, agents, registry, dock, setDock }}>
+    <StudioContext.Provider value={{ store, workflows, executions, models, agents, plugins, registry, dock, setDock }}>
       {children}
     </StudioContext.Provider>
   );
@@ -73,4 +76,8 @@ export function useModels<T>(selector: (state: ModelState) => T): T {
 
 export function useAgents<T>(selector: (state: AgentState) => T): T {
   return useStore(useStudio().agents, selector);
+}
+
+export function usePlugins<T>(selector: (state: PluginState) => T): T {
+  return useStore(useStudio().plugins, selector);
 }
