@@ -122,6 +122,8 @@ export function createWorkflowStore(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let queue: Promise<void> = Promise.resolve();
   let validation = 0;
+  let starting: Promise<void> | null = null;
+  let openRequest = 0;
 
   return createStore<WorkflowState>((set, get) => {
     const validate = async () => {
@@ -224,9 +226,34 @@ export function createWorkflowStore(
     };
 
     const openDocument = async (id: string) => {
+      const request = ++openRequest;
       await get().flush();
-      show(await client.getWorkflow(id));
+      const document = await client.getWorkflow(id);
+      if (request !== openRequest) return;
+      show(document);
       await client.putSetting(ACTIVE_WORKFLOW_KEY, id);
+    };
+
+    const start = async () => {
+      set({ phase: "loading", error: null });
+      try {
+        const [catalog, workflows, activeId, editor] = await Promise.all([
+          client.nodeCatalog(),
+          client.listWorkflows(),
+          client.getSetting(ACTIVE_WORKFLOW_KEY),
+          client.getSetting(EDITOR_KEY),
+        ]);
+        set({
+          catalog,
+          workflows,
+          snapToGrid: (editor as { snapToGrid?: boolean } | null)?.snapToGrid ?? true,
+        });
+        const initial = workflows.find((w) => w.id === activeId) ?? workflows[0];
+        if (initial) show(await client.getWorkflow(initial.id));
+        set({ phase: "ready" });
+      } catch (error) {
+        set({ phase: "failed", error: message(error) });
+      }
     };
 
     return {
@@ -246,26 +273,11 @@ export function createWorkflowStore(
       snapToGrid: true,
       versions: [],
 
-      async init() {
-        set({ phase: "loading", error: null });
-        try {
-          const [catalog, workflows, activeId, editor] = await Promise.all([
-            client.nodeCatalog(),
-            client.listWorkflows(),
-            client.getSetting(ACTIVE_WORKFLOW_KEY),
-            client.getSetting(EDITOR_KEY),
-          ]);
-          set({
-            catalog,
-            workflows,
-            snapToGrid: (editor as { snapToGrid?: boolean } | null)?.snapToGrid ?? true,
-          });
-          const initial = workflows.find((w) => w.id === activeId) ?? workflows[0];
-          if (initial) show(await client.getWorkflow(initial.id));
-          set({ phase: "ready" });
-        } catch (error) {
-          set({ phase: "failed", error: message(error) });
-        }
+      init() {
+        starting ??= start().finally(() => {
+          if (get().phase === "failed") starting = null;
+        });
+        return starting;
       },
 
       open: openDocument,

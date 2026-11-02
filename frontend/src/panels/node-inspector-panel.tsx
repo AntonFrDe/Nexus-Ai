@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CodeEditor } from "@/components/code-editor";
-import { FieldForm } from "@/components/forms/field-form";
-import { useStudio, useWorkflow } from "@/components/shell/providers";
+import { FieldForm, FieldSuggestions } from "@/components/forms/field-form";
+import { useModels, useStudio, useWorkflow } from "@/components/shell/providers";
 import { findType, type StudioNode } from "@/core/workflow/graph";
 import type { PortSpec } from "@/core/workflow/types";
 
@@ -200,11 +200,18 @@ export function NodeInspectorPanel() {
     return selected.length === 1 ? selected[0] : null;
   });
   const edge = useWorkflow((state) => state.edges.find((candidate) => candidate.selected) ?? null);
+  const models = useModels((state) => state.models);
+  const suggestions = useMemo(
+    () => ({ model: models.map((item) => `${item.provider_name}/${item.model_id}`) }),
+    [models],
+  );
 
   if (node) {
     return (
       <div className="panel">
-        <NodeInspector key={node.id} node={node} />
+        <FieldSuggestions.Provider value={suggestions}>
+          <NodeInspector key={node.id} node={node} />
+        </FieldSuggestions.Provider>
       </div>
     );
   }

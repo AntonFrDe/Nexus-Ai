@@ -30,7 +30,11 @@ MEMORY_IN = port("memory", "Memory", "memory")
 TOOL_OUT = port("tool", "Tool", "tool")
 
 MODEL_ID = field(
-    "model", "Model", required=True, description="Provider model identifier, such as ollama/llama3"
+    "model",
+    "Model",
+    required=True,
+    language="model",
+    description="Provider and model, such as Ollama/llama3",
 )
 SYSTEM_PROMPT = field("system_prompt", "System prompt", FieldKind.TEXTAREA)
 TEMPERATURE = field(

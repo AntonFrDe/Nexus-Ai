@@ -18,6 +18,12 @@ from nexus.execution.routes import router as executions_router
 from nexus.execution.store import ExecutionStore
 from nexus.nodes.catalog import create_node_registry
 from nexus.nodes.routes import router as nodes_router
+from nexus.providers.adapter import LiteLLMAdapter
+from nexus.providers.routes import EXCEPTION_HANDLERS as PROVIDER_EXCEPTION_HANDLERS
+from nexus.providers.routes import router as providers_router
+from nexus.providers.service import ProviderRegistry
+from nexus.secrets.routes import router as secrets_router
+from nexus.secrets.service import SecretService, load_master_key
 from nexus.settings_store.routes import router as settings_router
 from nexus.workflows import service as workflow_service
 from nexus.workflows.routes import not_found as workflow_not_found
@@ -39,6 +45,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with app.state.session_factory() as session, session.begin():
             workspace_service.seed_defaults(session)
         app.state.api_token = settings.api_token or issue_token(settings.data_dir)
+        app.state.secrets = SecretService(app.state.session_factory, *load_master_key(settings))
+        app.state.provider_registry = ProviderRegistry(
+            app.state.session_factory, app.state.secrets, LiteLLMAdapter()
+        )
 
         def load_workflow(workflow_id: str) -> WorkflowGraph:
             with app.state.session_factory() as session:
@@ -73,7 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.node_registry = create_node_registry()
     app.add_exception_handler(workspace_service.WorkspaceNotFound, not_found)
     app.add_exception_handler(workflow_service.WorkflowNotFound, workflow_not_found)
-    for exception, handler in EXECUTION_EXCEPTION_HANDLERS:
+    for exception, handler in (*EXECUTION_EXCEPTION_HANDLERS, *PROVIDER_EXCEPTION_HANDLERS):
         app.add_exception_handler(exception, handler)
 
     api = APIRouter(prefix="/api")
@@ -89,6 +99,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(nodes_router)
     api.include_router(workflows_router)
     api.include_router(executions_router)
+    api.include_router(secrets_router)
+    api.include_router(providers_router)
     app.include_router(api)
     return app
 

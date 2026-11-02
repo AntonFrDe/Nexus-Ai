@@ -1,6 +1,15 @@
 import { z } from "zod";
 
 import {
+  connectionResult,
+  modelTestResult,
+  provider,
+  providerType,
+  registeredModel,
+  type ProviderDraft,
+  type RegisteredModel,
+} from "@/core/models/types";
+import {
   execution,
   executionDetail,
   executionEvent,
@@ -149,6 +158,43 @@ export const apiClient = {
   },
   retryExecution: async (id: string) =>
     executionDetail.parse(await request(`/executions/${id}/retry`, { method: "POST" })),
+  providerTypes: async () => z.array(providerType).parse(await request("/provider-types")),
+  secretStatus: async () =>
+    z.object({ backend: z.string() }).parse(await request("/secrets/status")),
+  storeSecret: async (name: string, value: string) => {
+    await request(`/secrets/${name}`, send("PUT", { value }));
+  },
+  deleteSecret: async (name: string) => {
+    await request(`/secrets/${name}`, { method: "DELETE" });
+  },
+  listProviders: async () => z.array(provider).parse(await request("/providers")),
+  createProvider: async (draft: ProviderDraft) =>
+    provider.parse(await request("/providers", send("POST", draft))),
+  updateProvider: async (
+    id: string,
+    patch: { secret_name?: string; enabled?: boolean; endpoint?: string },
+  ) => provider.parse(await request(`/providers/${id}`, send("PATCH", patch))),
+  deleteProvider: async (id: string) => {
+    await request(`/providers/${id}`, { method: "DELETE" });
+  },
+  testProvider: async (id: string) =>
+    connectionResult.parse(await request(`/providers/${id}/test`, { method: "POST" })),
+  discoverModels: async (id: string) =>
+    z.array(registeredModel).parse(await request(`/providers/${id}/discover`, { method: "POST" })),
+  addModel: async (providerId: string, modelId: string) =>
+    registeredModel.parse(
+      await request(`/providers/${providerId}/models`, send("POST", { model_id: modelId })),
+    ),
+  listModels: async () => z.array(registeredModel).parse(await request("/models")),
+  updateModel: async (id: string, patch: Partial<RegisteredModel>) =>
+    registeredModel.parse(await request(`/models/${id}`, send("PATCH", patch))),
+  deleteModel: async (id: string) => {
+    await request(`/models/${id}`, { method: "DELETE" });
+  },
+  testModel: async (id: string, confirmPaid: boolean) =>
+    modelTestResult.parse(
+      await request(`/models/${id}/test`, send("POST", { confirm_paid: confirmPaid })),
+    ),
   getSetting: async (key: string): Promise<unknown> => {
     try {
       return z.object({ value: z.unknown() }).parse(await request(`/settings/${key}`)).value;

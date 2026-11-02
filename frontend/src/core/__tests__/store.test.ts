@@ -44,6 +44,45 @@ describe("workspace store", () => {
     expect(store.getState().phase).toBe("ready");
   });
 
+  it("starting twice loads once, so a late start cannot undo what the user did", async () => {
+    const client = fakeClient();
+    const store = createWorkspaceStore(client);
+    const first = store.getState().init();
+    const second = store.getState().init();
+    await Promise.all([first, second]);
+    expect(client.listWorkspaces).toHaveBeenCalledTimes(1);
+    expect(store.getState().layoutRevision).toBe(1);
+  });
+
+  it("can start again after a failure, which the retry button relies on", async () => {
+    const listWorkspaces = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("down"))
+      .mockResolvedValue([workspace("a")]);
+    const store = createWorkspaceStore(fakeClient({ listWorkspaces }));
+    await store.getState().init();
+    expect(store.getState().phase).toBe("failed");
+    await store.getState().init();
+    expect(store.getState().phase).toBe("ready");
+  });
+
+  it("a slow response never replaces a workspace opened after it", async () => {
+    let finishSlow: (value: WorkspaceDetail) => void = () => undefined;
+    const getWorkspace = vi.fn(async (id: string) =>
+      id === "slow"
+        ? new Promise<WorkspaceDetail>((resolve) => (finishSlow = resolve))
+        : workspace(id),
+    );
+    const store = createWorkspaceStore(fakeClient({ getWorkspace }));
+    await store.getState().init();
+    const slow = store.getState().open("slow");
+    await vi.advanceTimersByTimeAsync(0);
+    await store.getState().open("b");
+    finishSlow(workspace("slow"));
+    await slow;
+    expect(store.getState().active?.id).toBe("b");
+  });
+
   it("falls back to the first workspace when the remembered one is gone", async () => {
     const store = createWorkspaceStore(fakeClient({ getSetting: vi.fn(async () => "deleted") }));
     await store.getState().init();

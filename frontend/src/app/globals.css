@@ -477,3 +477,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 1px
 .log-lines .log-node { flex: none; color: var(--text-dim); }
 .log-lines li[data-tone="error"] { color: var(--destructive); }
 .fill-scroll { height: 100%; overflow: auto; }
+
+.registry-layout { display: grid; grid-template-columns: minmax(170px, 220px) 1fr; height: 100%; min-height: 0; }
+.registry-list { overflow: auto; padding: 8px; border-right: 1px solid var(--line); }
+.registry-main { min-width: 0; overflow: auto; padding: 10px 12px; }
+.registry-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 8px; }
+.inline-form { display: flex; gap: 6px; margin-block: 6px; }
+.inline-form input { flex: 1; min-width: 0; min-height: var(--row-height); padding: 3px 7px; color: var(--text); background: var(--surface-0); border: 1px solid var(--line); border-radius: 3px; }
+.badge { flex: none; padding: 0 4px; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); border: 1px solid var(--line); border-radius: 3px; }
+.result-ok { color: oklch(0.75 0.12 150); }
+.result-bad { color: var(--destructive); overflow-wrap: anywhere; }
+.capability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 3px 10px; }
+.capability-grid label { display: flex; align-items: center; gap: 6px; }
+.capability-grid input { accent-color: var(--accent-color); }
+.model-detail { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }

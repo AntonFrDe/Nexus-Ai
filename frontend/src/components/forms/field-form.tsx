@@ -1,12 +1,15 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 import { CodeEditor } from "@/components/code-editor";
 import type { FieldSpec, Issue } from "@/core/workflow/types";
 
 type Values = Record<string, unknown>;
+
+/** Suggested values by field language, such as registered models for a model field. */
+export const FieldSuggestions = createContext<Record<string, string[]>>({});
 
 interface Props {
   fields: FieldSpec[];
@@ -92,10 +95,28 @@ interface FieldProps {
 
 function Control({ field, value, onChange }: FieldProps) {
   const id = `field-${field.name}`;
+  const suggestions = useContext(FieldSuggestions)[field.language ?? ""];
   const text = (value as string | undefined) ?? "";
   switch (field.kind) {
     case "text":
-      return <input id={id} aria-label={field.label} value={text} onChange={(e) => onChange(e.target.value)} />;
+      return (
+        <>
+          <input
+            id={id}
+            aria-label={field.label}
+            value={text}
+            list={suggestions ? `${id}-options` : undefined}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          {suggestions && (
+            <datalist id={`${id}-options`}>
+              {suggestions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          )}
+        </>
+      );
     case "textarea":
       return (
         <textarea

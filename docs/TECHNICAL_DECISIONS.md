@@ -16,7 +16,8 @@ Versions were checked against npm and PyPI on 2026-11-02.
 | Backend | fastapi / pydantic | 0.162.0 / 2.14.2 |
 | Backend | sqlalchemy / alembic | 2.1.x / 1.20.x |
 | Backend | langgraph / langgraph-checkpoint-sqlite | 1.2.x / 3.1.x |
-| Future | litellm / langfuse | 1.106.6 / 5.1.0 |
+| Backend | litellm (pinned) / cryptography / keyring | 1.106.5 / 50 / 25 |
+| Future | langfuse | 5.1.0 |
 | Future | claude-agent-sdk / google-antigravity | 0.2.176 / 0.1.23 |
 
 The LangGraph, LiteLLM, Langfuse and Claude Agent SDK packages resolve together with the backend on
@@ -101,6 +102,28 @@ starts and names the milestone. Mock handlers may exist only inside tests.
 
 **T-024: Checkpoints in a separate SQLite file.** LangGraph owns `checkpoints.db`; relational records
 stay in `nexus.db`, behind `ExecutionStore`.
+
+**T-025: LiteLLM pinned to exactly 1.106.5.** LiteLLM had malicious PyPI releases in March 2026 and
+on 21 October 2026 (1.107.0, [MAL-2026-2144](https://osv.dev/vulnerability/MAL-2026-2144)). It runs
+inside the process that holds API keys. The version is exact, locked by hash in `uv.lock`, and must
+be raised only by hand, after checking advisories. Before upgrading, look for `cook.pth`, `cook.py`
+and an unexpected `sitecustomize.py` in site-packages. Isolating LiteLLM in its own process is worth
+revisiting with the plugin sandbox.
+
+**T-026: Master key outside the database.** A stolen `nexus.db` alone reveals no secret. A process
+running as the same user can still reach the keychain entry or key file.
+
+**T-027: Parameters reuse the field system.** Allowed parameters are `FieldSpec`s filtered by
+capabilities, so an unsupported parameter has no control and fails validation.
+
+**T-028: Capability overrides are stored apart.** Rediscovery refreshes detected values without
+erasing manual corrections.
+
+**T-029: LiteLLM loads late, with its local price table.** Importing it takes seconds, and by default
+it fetches prices online, which local-first operation cannot rely on.
+
+**T-030: Subscriptions are not providers.** The registry holds API credentials only. Claude and
+Google subscriptions belong to runtime adapters in Milestone 5.
 
 ## External integrations checked
 

@@ -2,9 +2,9 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 3 of 8.** Workflows now really run, with live status, pause, resume, human
-approval and recovery after a restart. Only logic and data nodes can run so far: agents, models and
-side-effect tools are refused with a reason until their milestones. See
+**Status: Milestone 4 of 8.** Workflows run with live status, pause, resume and approval, and the
+Model Registry manages providers, encrypted keys and models. Workflows do not call models yet:
+agents arrive in Milestone 5, and only logic and data nodes run today. See
 [the roadmap](docs/ROADMAP.md).
 
 ## Run it
@@ -25,7 +25,12 @@ make backend
 make frontend
 ```
 
-Open http://localhost:3000. Data lives in `~/.nexus` (override with `NEXUS_DATA_DIR`).
+Open http://localhost:3000. Data lives in `~/.nexus` (override with `NEXUS_DATA_DIR`). On first start
+the backend adds a `nexus-studio` entry to your system keychain, holding the key that encrypts your
+API keys.
+
+For local models, install [Ollama](https://ollama.com), pull a model, then add an Ollama provider in
+the Model Registry panel.
 
 ## Test
 

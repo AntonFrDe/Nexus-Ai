@@ -24,6 +24,7 @@ import { AppearancePanel } from "@/panels/appearance-panel";
 import { ExecutionLogsPanel } from "@/panels/execution-logs-panel";
 import { ExecutionsPanel } from "@/panels/executions-panel";
 import { LayoutInspectorPanel } from "@/panels/layout-inspector-panel";
+import { ModelRegistryPanel } from "@/panels/model-registry-panel";
 import { NodeInspectorPanel } from "@/panels/node-inspector-panel";
 import { NodeLibraryPanel } from "@/panels/node-library-panel";
 import { NotesPanel } from "@/panels/notes-panel";
@@ -171,14 +172,14 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     icon: Coins,
     milestone: 7,
   }),
-  plannedPanel({
+  {
     id: "model-registry",
     title: "Model Registry",
-    description: "Providers, models and connection tests.",
+    description: "Providers, API keys, models and connection tests.",
     category: AI,
     icon: BrainCircuit,
-    milestone: 4,
-  }),
+    component: ModelRegistryPanel,
+  },
   plannedPanel({
     id: "agent-registry",
     title: "Agents",

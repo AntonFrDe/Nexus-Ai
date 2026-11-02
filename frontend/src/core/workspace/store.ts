@@ -56,6 +56,9 @@ export function createWorkspaceStore(client: ApiClient, debounceMs = 500): Works
   let timer: ReturnType<typeof setTimeout> | null = null;
   // Writes run one at a time so an older layout can never land after a newer one.
   let queue: Promise<void> = Promise.resolve();
+  // A repeated start must not reset the dock after the user has already acted.
+  let starting: Promise<void> | null = null;
+  let openRequest = 0;
 
   return createStore<WorkspaceState>((set, get) => {
     const enqueueSave = (patch: WorkspacePatch) => {
@@ -77,9 +80,32 @@ export function createWorkspaceStore(client: ApiClient, debounceMs = 500): Works
       }));
 
     const openWorkspace = async (id: string) => {
+      const request = ++openRequest;
       await get().flush();
-      show(await client.getWorkspace(id));
+      const workspace = await client.getWorkspace(id);
+      if (request !== openRequest) return;
+      show(workspace);
       await client.putSetting(ACTIVE_WORKSPACE_KEY, id);
+    };
+
+    const start = async () => {
+      set({ phase: "loading", error: null });
+      try {
+        const [workspaces, activeId, appearance] = await Promise.all([
+          client.listWorkspaces(),
+          client.getSetting(ACTIVE_WORKSPACE_KEY),
+          client.getSetting(APPEARANCE_KEY),
+        ]);
+        const initial = workspaces.find((w) => w.id === activeId) ?? workspaces[0];
+        set({
+          workspaces,
+          appearance: { ...DEFAULT_APPEARANCE, ...(appearance as Partial<Appearance> | null) },
+        });
+        show(await client.getWorkspace(initial.id));
+        set({ phase: "ready" });
+      } catch (error) {
+        set({ phase: "failed", error: message(error) });
+      }
     };
 
     return {
@@ -92,26 +118,12 @@ export function createWorkspaceStore(client: ApiClient, debounceMs = 500): Works
       saveStatus: "idle",
       appearance: DEFAULT_APPEARANCE,
 
-      async init() {
-        set({ phase: "loading", error: null });
-        try {
-          const [workspaces, activeId, appearance] = await Promise.all([
-            client.listWorkspaces(),
-            client.getSetting(ACTIVE_WORKSPACE_KEY),
-            client.getSetting(APPEARANCE_KEY),
-          ]);
-          const initial = workspaces.find((w) => w.id === activeId) ?? workspaces[0];
-          set({
-            workspaces,
-            appearance: { ...DEFAULT_APPEARANCE, ...(appearance as Partial<Appearance> | null) },
-          });
-          show(await client.getWorkspace(initial.id));
-          set({ phase: "ready" });
-        } catch (error) {
-          set({ phase: "failed", error: message(error) });
-        }
+      init() {
+        starting ??= start().finally(() => {
+          if (get().phase === "failed") starting = null;
+        });
+        return starting;
       },
-
       open: openWorkspace,
 
       async create(draft) {

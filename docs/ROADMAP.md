@@ -88,14 +88,39 @@ Known limitations:
 - Stored node inputs and outputs live in SQLite, with no size limit or separate artifact store yet.
 - Concurrency is one global limit (4 runs); per-resource limits arrive with Milestone 4.
 - Execution comparison and modified replay are Milestone 7.
-- One end-to-end run had a single failure, then four clean runs and a clean stress run. Its cause is
-  unknown, and it may be a test that is unstable under load.
 
-## Milestone 4: Model Manager
+## Milestone 4: Model Manager (complete, real providers unverified)
 
-LiteLLM, Ollama, registry, provider configuration, encrypted secrets, connection tests, capabilities.
+| Item | State |
+|---|---|
+| Encrypted secrets service, write-only over the API | Done, master key in the system keychain or a private file |
+| Provider registry with nine provider types | Done |
+| Model registry, discovery, manual entry | Done |
+| Capability detection, manual overrides, parameters limited to capabilities | Done |
+| Connection and model tests, with confirmation before any paid call | Done |
+| Model Registry panel, model suggestions in the inspector | Done |
 
-Acceptance: configure and test one local and one external model.
+**Acceptance: not fully verified.** "Configure and test a local model and an external model" works
+through the real adapter, real LiteLLM and real HTTP, but against local test servers. Ollama is not
+installed on the development machine and no provider key was used, so **no real model has answered
+yet**.
+
+Known limitations:
+
+- Anthropic, OpenAI, Gemini, Mistral, OpenRouter, LM Studio and real Ollama are untested. Discovery
+  formats come from documentation.
+- Capabilities come from LiteLLM's tables by provider, so a local model may be listed with a feature
+  it lacks. Testing a capability for real, and correcting it with an override, is manual.
+- Rate limits are stored but not enforced, and the per-resource concurrency limits planned here move
+  to Milestone 5, where calls happen during runs.
+- Paid confirmation covers test calls. The budget rules for runs are Milestone 5.
+- Streaming is detected, but tests use one non-streaming call.
+- Changing a provider's endpoint keeps its key, which is then sent to the new endpoint.
+- Secrets cannot be rotated in bulk, and a lost master key means entering every key again.
+- Backup of the database does not include the keychain entry.
+
+**Also fixed in this milestone:** starting twice, as React does in development, could reset the dock
+after the first user action. This is the likely cause of the unexplained Milestone 3 test failure.
 
 ## Milestone 5: Agent Manager
 

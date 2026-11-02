@@ -87,6 +87,11 @@ transitions, pause, approval, recovery and shutdown. `execution/store.py` holds 
 Events go to the database first, then SSE reads them, so a reconnecting client replays from its last
 position.
 
+**Models.** `providers/catalog.py` describes provider types as data. `ProviderRegistry` holds
+instances, and calls go through the `ProviderAdapter` interface, implemented by `LiteLLMAdapter`.
+`secrets/service.py` is the only code that handles secret values, and resolves one only for the
+length of a call.
+
 ## API
 
 | Method | Path | Purpose |
@@ -107,6 +112,12 @@ position.
 | POST | `/api/workflows/import` | Migrate, parse and create |
 | GET, POST | `/api/workflows/{id}/versions` | List, snapshot |
 | POST | `/api/workflows/{id}/versions/{n}/restore` | Restore a snapshot |
+| GET, PUT, DELETE | `/api/secrets`, `/api/secrets/{name}` | Names only, and write-only values |
+| GET | `/api/provider-types`, `/api/capabilities` | Catalogs |
+| GET, POST, PATCH, DELETE | `/api/providers`, `/api/providers/{id}` | Manage providers |
+| POST | `/api/providers/{id}/test`, `/discover` | Check the connection, list models |
+| GET, POST, PATCH, DELETE | `/api/models`, `/api/providers/{id}/models`, `/api/models/{id}` | Manage models |
+| POST | `/api/models/{id}/test` | One real short call |
 | POST | `/api/workflows/{id}/executions` | Start a run (full, node or from_node) |
 | GET | `/api/executions`, `/api/executions/{id}` | List, read with node records |
 | GET | `/api/executions/{id}/events` | Live SSE, with replay |
@@ -124,7 +135,8 @@ position.
 | `workflows` | built | id, name, description, graph JSON, timestamps |
 | `workflow_versions` | built | Immutable snapshots, numbered per workflow, cascade on delete |
 | `executions`, `node_executions`, `execution_events` | built | Runs with their own graph copy, per-node records, ordered events |
-| `providers`, `models`, `secrets` | *planned, M4* | Registry; secrets encrypted and never returned to the browser |
+| `secrets` | built | Name and Fernet ciphertext; the key lives outside the database |
+| `providers`, `models` | built | Registry, with a secret name only, and capabilities, overrides, pricing, defaults |
 | `agents`, `agent_versions`, `runtimes` | *planned, M5* | Definitions, kept separate from models and runtimes |
 | `plugins` | *planned, M6* | Installed plugin metadata |
 
@@ -140,6 +152,7 @@ LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-
 - Secret fields only accept `{"secret": "<name>"}`, so raw values fail validation. Autosave stores
   drafts before validation, and free-text fields cannot be inspected for pasted keys.
 - Code fields are stored as text. Nothing evaluates them.
+- Secrets are encrypted at rest and no route returns them. Keys are scrubbed from provider errors.
 
 The API requires a per-launch token, added by the Next proxy for local same-origin callers only
 ([T-009](TECHNICAL_DECISIONS.md)). Processes running as the same user are not defended against.

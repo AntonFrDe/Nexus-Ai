@@ -86,9 +86,9 @@ routing:
 
 | Milestone | Addition |
 |---|---|
-| 3 | Done in part: attempts and failures are recorded. The model used and per-resource limits come with Milestone 4 |
-| 4 | Abstract model IDs resolved per account, availability checks, Ollama first, budget rules |
-| 5 | `claude-code` and `antigravity` runtimes with declared capabilities, role and profile definitions, worktree isolation for writing agents |
+| 3 | Done in part: attempts and failures are recorded |
+| 4 | Done in part: registry, connection checks and paid-call confirmation. Abstract ID resolution moves to Milestone 5 |
+| 5 | `claude-code` and `antigravity` runtimes with declared capabilities, role and profile definitions, worktree isolation for writing agents, per-resource limits, budget rules, recording the model that really ran |
 | 5 or later | Router itself, and the Model Router node gaining profile support |
 | After 5 | The six reference workflows: development, research, code audit, data processing, documentation, NEXUS maintenance |
 | 7 | Personal benchmark: about 20 real tasks per model, measuring test pass rate, corrections, time, tokens, cost and review quality |

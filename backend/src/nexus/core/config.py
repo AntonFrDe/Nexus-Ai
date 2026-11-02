@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     # Fixed only by tests; otherwise each launch issues its own token.
     api_token: str | None = None
     max_concurrent_executions: int = 4
+    # auto uses the OS keychain when there is one, otherwise a private file.
+    secret_backend: Literal["auto", "keychain", "file"] = "auto"
 
     @property
     def database_path(self) -> Path:

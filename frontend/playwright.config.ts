@@ -14,11 +14,12 @@ export default defineConfig({
   workers: 1,
   use: { baseURL: "http://localhost:3100", viewport: { width: 1440, height: 900 } },
   webServer: [
+    { command: "node e2e/fake-provider.mjs", url: "http://127.0.0.1:11999/api/tags" },
     {
       command: `${uv} run nexus-api`,
       cwd: "../backend",
       url: "http://127.0.0.1:8100/api/health",
-      env: { NEXUS_DATA_DIR: dataDir, NEXUS_PORT: "8100" },
+      env: { NEXUS_DATA_DIR: dataDir, NEXUS_PORT: "8100", NEXUS_SECRET_BACKEND: "file" },
     },
     {
       command: "npx next dev --port 3100",

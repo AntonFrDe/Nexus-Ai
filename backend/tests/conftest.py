@@ -17,7 +17,9 @@ def authed(settings: Settings, **options) -> TestClient:
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path, allowed_hosts=["testserver"], api_token=TOKEN)
+    return Settings(
+        data_dir=tmp_path, allowed_hosts=["testserver"], api_token=TOKEN, secret_backend="file"
+    )
 
 
 @pytest.fixture
