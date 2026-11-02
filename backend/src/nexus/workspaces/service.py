@@ -23,9 +23,7 @@ def seed_defaults(session: Session) -> None:
     if session.scalar(select(func.count()).select_from(Workspace)):
         return
     for position, (name, preset, description) in enumerate(DEFAULT_WORKSPACES):
-        session.add(
-            Workspace(name=name, preset=preset, description=description, position=position)
-        )
+        session.add(Workspace(name=name, preset=preset, description=description, position=position))
 
 
 def list_workspaces(session: Session) -> list[Workspace]:

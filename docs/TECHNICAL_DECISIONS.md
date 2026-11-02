@@ -10,6 +10,8 @@ Versions were checked against npm and PyPI on 2026-11-02.
 | Frontend | dockview-react | 8.8.3 |
 | Frontend | zustand / zod | 5.0.16 / 4.6.7 |
 | Frontend | tailwindcss / shadcn (base-ui) | 4.x / 4.23 |
+| Frontend | @xyflow/react / @dagrejs/dagre | 12.12 / 3.1 |
+| Frontend | monaco-editor / @monaco-editor/react | 0.57 / 4.7 |
 | Tests | vitest / playwright | 5.0.5 / 1.64.1 |
 | Backend | fastapi / pydantic | 0.162.0 / 2.14.2 |
 | Backend | sqlalchemy / alembic | 2.1.x / 1.20.x |
@@ -57,6 +59,26 @@ clsx plus tailwind-merge. Kept.
 
 **T-012: Vitest without `@vitejs/plugin-react`.** That plugin's peer range conflicted during install,
 and the built-in JSX transform is enough.
+
+**T-013: Field specs compile to Pydantic.** Config models are generated from declarative `FieldSpec`s
+rather than written as classes. Plugins in another process can then declare nodes as JSON, and the
+main process still validates with Pydantic.
+
+**T-014: Drafts save without semantic validation.** Rejecting invalid graphs would make autosave lose
+work in progress. Validity is a report, not a save condition.
+
+**T-015: Whole-document saves.** The client sends the full document on each autosave. It is simple and
+idempotent; documents are capped at 5 MB.
+
+**T-016: Monaco bundled locally.** `@monaco-editor/react` loads Monaco from a CDN by default, which
+breaks offline use. `loader.config({ monaco })` points it at the npm package, and an E2E test asserts
+no external request is made.
+
+**T-017: Node IDs on the client.** The editor creates IDs so undo and offline edits need no round
+trip. The backend still rejects duplicates.
+
+**T-018: Cycles need a bounding node.** A cycle is valid only through a node type with
+`bounds_cycles`, currently Loop, so a graph cannot loop forever by accident.
 
 ## External integrations checked
 

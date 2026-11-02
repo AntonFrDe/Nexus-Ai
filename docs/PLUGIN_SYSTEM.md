@@ -1,7 +1,7 @@
 # Plugin system
 
-**Status: design only.** What exists today is `PanelRegistry`, used by built-in panels. Everything
-else here is planned for Milestone 6 and may change once the node and provider contracts stabilize.
+**Status: design only.** What exists today is `PanelRegistry` in the frontend and `NodeRegistry` in
+the backend, both used only by built-ins. Everything else here is planned for Milestone 6 and may change once the node and provider contracts stabilize.
 
 ## Principles
 
@@ -34,7 +34,7 @@ else here is planned for Milestone 6 and may change once the node and provider c
 | Point | Registry | State |
 |---|---|---|
 | Workspace panels | `PanelRegistry` | Exists, built-in only |
-| Workflow nodes | Node registry | Milestone 2 |
+| Workflow nodes | `NodeRegistry` | Exists, built-in only. Types are plain data, so they can cross a process boundary |
 | Model providers | Provider registry | Milestone 4 |
 | Agent runtimes | Runtime registry | Milestone 5 |
 | Tools, storage, themes, integrations | To define | Milestone 6 |

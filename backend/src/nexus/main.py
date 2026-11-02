@@ -9,7 +9,12 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from nexus import __version__
 from nexus.core.config import Settings
 from nexus.core.db import create_db_engine, run_migrations
+from nexus.nodes.catalog import create_node_registry
+from nexus.nodes.routes import router as nodes_router
 from nexus.settings_store.routes import router as settings_router
+from nexus.workflows import service as workflow_service
+from nexus.workflows.routes import not_found as workflow_not_found
+from nexus.workflows.routes import router as workflows_router
 from nexus.workspaces import service as workspace_service
 from nexus.workspaces.routes import not_found
 from nexus.workspaces.routes import router as workspaces_router
@@ -30,7 +35,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="NEXUS", version=__version__, lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+    app.state.node_registry = create_node_registry()
     app.add_exception_handler(workspace_service.WorkspaceNotFound, not_found)
+    app.add_exception_handler(workflow_service.WorkflowNotFound, workflow_not_found)
 
     api = APIRouter(prefix="/api")
 
@@ -42,6 +49,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     api.include_router(workspaces_router)
     api.include_router(settings_router)
+    api.include_router(nodes_router)
+    api.include_router(workflows_router)
     app.include_router(api)
     return app
 

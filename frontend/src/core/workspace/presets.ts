@@ -11,10 +11,12 @@ export type Preset = PresetPanel[];
 export const PRESETS: Record<string, Preset> = {
   "workflow-builder": [
     { panel: "workflow-canvas" },
-    { panel: "node-library", relativeTo: "workflow-canvas", direction: "left", size: 240 },
-    { panel: "node-inspector", relativeTo: "workflow-canvas", direction: "right", size: 300 },
-    { panel: "execution-logs", relativeTo: "workflow-canvas", direction: "below", size: 200 },
-    { panel: "notes", relativeTo: "execution-logs", direction: "within" },
+    { panel: "workflows", relativeTo: "workflow-canvas", direction: "left", size: 280 },
+    { panel: "node-library", relativeTo: "workflows", direction: "within" },
+    { panel: "workflow-versions", relativeTo: "workflow-canvas", direction: "right", size: 360 },
+    { panel: "node-inspector", relativeTo: "workflow-versions", direction: "within" },
+    { panel: "problems", relativeTo: "workflow-canvas", direction: "below", size: 180 },
+    { panel: "notes", relativeTo: "problems", direction: "within" },
   ],
   "agent-development": [
     { panel: "agent-registry" },

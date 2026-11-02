@@ -4,7 +4,9 @@ import {
   Bot,
   BrainCircuit,
   Braces,
+  CircleAlert,
   Coins,
+  Files,
   GitBranch,
   LayoutGrid,
   Layers,
@@ -20,10 +22,16 @@ import {
 import { PanelRegistry, type PanelDefinition } from "@/core/panels/registry";
 import { AppearancePanel } from "@/panels/appearance-panel";
 import { LayoutInspectorPanel } from "@/panels/layout-inspector-panel";
+import { NodeInspectorPanel } from "@/panels/node-inspector-panel";
+import { NodeLibraryPanel } from "@/panels/node-library-panel";
 import { NotesPanel } from "@/panels/notes-panel";
 import { PanelLibraryPanel } from "@/panels/panel-library-panel";
 import { plannedPanel } from "@/panels/planned-panel";
+import { ProblemsPanel } from "@/panels/problems-panel";
 import { SystemStatusPanel } from "@/panels/system-status-panel";
+import { WorkflowCanvasPanel } from "@/panels/workflow-canvas-panel";
+import { WorkflowVersionsPanel } from "@/panels/workflow-versions-panel";
+import { WorkflowsPanel } from "@/panels/workflows-panel";
 import { WorkspaceManagerPanel } from "@/panels/workspace-manager-panel";
 
 const WORKSPACE = "Workspace";
@@ -81,30 +89,54 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     icon: Braces,
     component: LayoutInspectorPanel,
   },
-  plannedPanel({
+  {
+    id: "workflows",
+    title: "Workflows",
+    description: "Create, open, duplicate, import and export workflows.",
+    category: WORKFLOW,
+    icon: Files,
+    component: WorkflowsPanel,
+  },
+  {
     id: "workflow-canvas",
     title: "Workflow Canvas",
     description: "Visual node editor for designing workflows.",
     category: WORKFLOW,
     icon: Workflow,
-    milestone: 2,
-  }),
-  plannedPanel({
+    component: WorkflowCanvasPanel,
+  },
+  {
     id: "node-library",
     title: "Node Library",
     description: "Searchable catalog of registered workflow nodes.",
     category: WORKFLOW,
     icon: Blocks,
-    milestone: 2,
-  }),
-  plannedPanel({
+    component: NodeLibraryPanel,
+  },
+  {
     id: "node-inspector",
     title: "Node Inspector",
     description: "Schema-driven configuration of the selected node.",
     category: WORKFLOW,
     icon: SlidersHorizontal,
-    milestone: 2,
-  }),
+    component: NodeInspectorPanel,
+  },
+  {
+    id: "problems",
+    title: "Problems",
+    description: "Validation results from the backend.",
+    category: WORKFLOW,
+    icon: CircleAlert,
+    component: ProblemsPanel,
+  },
+  {
+    id: "workflow-versions",
+    title: "Workflow Versions",
+    description: "Save and restore versions of the open workflow.",
+    category: WORKFLOW,
+    icon: GitBranch,
+    component: WorkflowVersionsPanel,
+  },
   plannedPanel({
     id: "execution-list",
     title: "Executions",
@@ -152,14 +184,6 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     category: AI,
     icon: Bot,
     milestone: 5,
-  }),
-  plannedPanel({
-    id: "workflow-versions",
-    title: "Workflow Versions",
-    description: "Version history of the open workflow.",
-    category: WORKFLOW,
-    icon: GitBranch,
-    milestone: 2,
   }),
 ];
 

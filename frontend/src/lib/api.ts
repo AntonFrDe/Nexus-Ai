@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+import {
+  nodeCatalog,
+  validationReport,
+  versionSummary,
+  workflowDocument,
+  workflowSummary,
+  type WorkflowContent,
+  type WorkflowGraphContent,
+} from "@/core/workflow/types";
+
 const workspaceSummary = z.object({
   id: z.string(),
   name: z.string(),
@@ -77,6 +87,33 @@ export const apiClient = {
   exportWorkspace: (id: string) => request(`/workspaces/${id}/export`),
   importWorkspace: async (document: unknown) =>
     workspaceDetail.parse(await request("/workspaces/import", send("POST", document))),
+  nodeCatalog: async () => nodeCatalog.parse(await request("/node-types")),
+  listWorkflows: async () => z.array(workflowSummary).parse(await request("/workflows")),
+  getWorkflow: async (id: string) => workflowDocument.parse(await request(`/workflows/${id}`)),
+  createWorkflow: async (draft: { name: string; description: string }) =>
+    workflowDocument.parse(await request("/workflows", send("POST", draft))),
+  saveWorkflow: async (id: string, content: WorkflowContent, keepalive = false) =>
+    workflowDocument.parse(
+      await request(`/workflows/${id}`, send("PUT", content, { keepalive })),
+    ),
+  deleteWorkflow: async (id: string) => {
+    await request(`/workflows/${id}`, { method: "DELETE" });
+  },
+  duplicateWorkflow: async (id: string) =>
+    workflowDocument.parse(await request(`/workflows/${id}/duplicate`, { method: "POST" })),
+  exportWorkflow: (id: string) => request(`/workflows/${id}/export`),
+  importWorkflow: async (document: unknown) =>
+    workflowDocument.parse(await request("/workflows/import", send("POST", document))),
+  validateWorkflow: async (graph: WorkflowGraphContent) =>
+    validationReport.parse(await request("/workflows/validate", send("POST", graph))),
+  listVersions: async (id: string) =>
+    z.array(versionSummary).parse(await request(`/workflows/${id}/versions`)),
+  createVersion: async (id: string, label: string) =>
+    versionSummary.parse(await request(`/workflows/${id}/versions`, send("POST", { label }))),
+  restoreVersion: async (id: string, number: number) =>
+    workflowDocument.parse(
+      await request(`/workflows/${id}/versions/${number}/restore`, { method: "POST" }),
+    ),
   getSetting: async (key: string): Promise<unknown> => {
     try {
       return z.object({ value: z.unknown() }).parse(await request(`/settings/${key}`)).value;

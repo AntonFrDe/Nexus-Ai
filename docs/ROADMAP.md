@@ -24,15 +24,35 @@ Known limitations:
 - Panels are single-instance per workspace.
 - The title bar is built for desktop widths.
 
-## Milestone 2: Workflow editor (next)
+## Milestone 2: Workflow editor (complete)
 
-React Flow canvas, node registry and library, schema-driven inspector, versioned workflow JSON schema
-with backend validation, autosave. Replaces the Workflow Canvas, Node Library, Node Inspector and
-Workflow Versions placeholders.
+| Item | State |
+|---|---|
+| Node registry and catalog of 45 node types across six categories, plus Group and Annotation | Done; definitions and validation only, nothing executes |
+| Schema-driven inspector: all 12 field kinds, conditional fields, advanced sections | Done |
+| Per-node label, runtime settings, schema overrides, permissions | Done; permissions are stored, not enforced |
+| Canvas: pan, zoom, grid, snap, minimap, multi-select, duplicate, delete, undo/redo, group, resize, annotations, auto layout, edge labels, search | Done |
+| Typed ports, shapes and connection checks | Done |
+| Versioned workflow JSON, backend validation, schema migration chain | Done; no real migration exists yet, the chain is tested with fixtures |
+| Autosave, import/export, immutable versions with restore | Done |
+| Example workflows in `backend/examples` | Done |
 
-Acceptance: create, edit, save, reload and export a workflow.
+**Acceptance:** create, edit, save, reload and export a workflow. Verified end to end in Chromium.
 
-## Milestone 3: Execution engine
+Known limitations:
+
+- Workflow `variables`, `config` and `policies` are stored and exported but have no editor yet.
+- Secret fields hold references only, and nothing resolves them until the secrets service (M4).
+- Model fields are free text until the model registry (M4); sub-workflow and agent fields are raw IDs.
+- Condition fields are unparsed strings. Their expression language is designed in Milestone 3.
+- Plugins cannot add canvas shapes yet; a node type picks one of the five built-in renderers.
+- The canvas was not tested inside a floating group or popout window.
+- Dragging a wire onto an incompatible port is refused without a message; the reason appears only in
+  the unit-tested store path.
+- Saved workspaces keep their old layout. Use Reset layout to get the new Workflow Builder preset.
+- Monaco adds significant weight: `.next/static` is about 16 MB.
+
+## Milestone 3: Execution engine (next)
 
 LangGraph integration, graph compiler, node adapters, execution lifecycle, SSE or WebSocket events,
 checkpointing. Local API authentication (T-009) is a prerequisite.

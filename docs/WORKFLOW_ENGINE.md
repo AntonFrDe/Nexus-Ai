@@ -1,7 +1,7 @@
 # Workflow engine
 
-**Status: design only.** No workflow code exists yet. Milestones 2 and 3 will validate this design
-against LangGraph itself and revise it.
+**Status: the document format and validator exist. Execution is design only** and will be checked
+against LangGraph itself in Milestone 3.
 
 ## Principles
 
@@ -10,25 +10,55 @@ against LangGraph itself and revise it.
 - Graph compilation never evaluates code supplied by the frontend.
 - Topology is separate from node implementation.
 
-## Workflow document (draft)
+## Workflow document
 
 ```json
 {
-  "id": "uuid",
-  "name": "Example",
-  "description": "",
-  "schemaVersion": 1,
-  "nodes": [{ "id": "n1", "type": "core.llm_agent", "config": {}, "position": { "x": 0, "y": 0 } }],
-  "edges": [{ "id": "e1", "source": "n1", "sourcePort": "out", "target": "n2", "targetPort": "in" }],
-  "variables": {},
-  "config": {},
-  "policies": {},
-  "metadata": {}
+  "format": "nexus.workflow",
+  "workflow": {
+    "name": "Example",
+    "description": "",
+    "schema_version": 1,
+    "nodes": [{
+      "id": "n1",
+      "type": "core.llm_agent",
+      "position": { "x": 0, "y": 0 },
+      "label": "",
+      "config": {},
+      "runtime": {},
+      "permissions": [],
+      "input_schema": null,
+      "output_schema": null,
+      "parent_id": null,
+      "width": null,
+      "height": null
+    }],
+    "edges": [{
+      "id": "e1",
+      "source": "n1",
+      "source_port": "out",
+      "target": "n2",
+      "target_port": "in",
+      "label": ""
+    }],
+    "variables": {},
+    "config": {},
+    "policies": {},
+    "metadata": {}
+  }
 }
 ```
 
-Secrets are stored as references, never as values. Migrations between `schemaVersion` values are pure
-functions, each covered by tests.
+Secrets appear as `{"secret": "<name>"}`, never as values. `schema_version` upgrades run through
+`workflows/migrations.py`: pure functions applied in order when a document is imported or read. No
+real migration exists yet, because the schema is still at version 1.
+
+## Validation rules
+
+| Severity | Codes |
+|---|---|
+| Error | `unknown_node_type`, `duplicate_node_id`, `duplicate_edge_id`, `duplicate_edge`, `invalid_config`, `invalid_runtime`, `unknown_permission`, `invalid_parent`, `edge_unknown_node`, `edge_unknown_port`, `edge_to_self`, `edge_port_type`, `missing_required_input`, `input_accepts_one`, `unbounded_cycle` |
+| Warning | `no_input`, `no_output`, `disconnected` |
 
 ## Pipeline
 

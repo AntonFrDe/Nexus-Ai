@@ -2,8 +2,9 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 1 of 8.** The persistent IDE-like workspace works. Workflows, execution,
-models and agents do not exist yet; their panels are labeled as such. See [the roadmap](docs/ROADMAP.md).
+**Status: Milestone 2 of 8.** The persistent workspace and the visual workflow editor work.
+Workflows can be designed, validated and versioned, but **not run**: execution, models and agents do
+not exist yet, and their panels are labeled as such. See [the roadmap](docs/ROADMAP.md).
 
 ## Run it
 
@@ -41,6 +42,8 @@ make lint
 
 End-to-end tests need Chromium once (`cd frontend && npx playwright install chromium`) and use a
 temporary data directory, never `~/.nexus`.
+
+Example workflows are in `backend/examples`; import them from the Workflows panel.
 
 ## Documentation
 

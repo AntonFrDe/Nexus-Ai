@@ -1,0 +1,22 @@
+{
+  "format": "nexus.workflow",
+  "workflow": {
+    "name": "Bounded refinement",
+    "description": "A draft is improved in a loop until the iteration limit, then returned.",
+    "schema_version": 1,
+    "nodes": [
+      {"id": "input", "type": "core.input", "position": {"x": 0, "y": 100}},
+      {"id": "loop", "type": "core.loop", "position": {"x": 260, "y": 100},
+       "config": {"mode": "count", "count": 3}},
+      {"id": "writer", "type": "core.llm_agent", "position": {"x": 540, "y": 20},
+       "label": "Writer", "config": {"model": "ollama/llama3"}},
+      {"id": "output", "type": "core.output", "position": {"x": 540, "y": 220}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "input", "source_port": "out", "target": "loop", "target_port": "in"},
+      {"id": "e2", "source": "loop", "source_port": "body", "target": "writer", "target_port": "in"},
+      {"id": "e3", "source": "writer", "source_port": "out", "target": "loop", "target_port": "repeat"},
+      {"id": "e4", "source": "loop", "source_port": "done", "target": "output", "target_port": "in"}
+    ]
+  }
+}

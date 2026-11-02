@@ -1,0 +1,28 @@
+{
+  "format": "nexus.workflow",
+  "workflow": {
+    "name": "Research summary",
+    "description": "Summarizes input with a local model and asks a person to approve the result.",
+    "schema_version": 1,
+    "nodes": [
+      {"id": "input", "type": "core.input", "position": {"x": 0, "y": 80}},
+      {"id": "model", "type": "core.model_selector", "position": {"x": 0, "y": 240},
+       "config": {"model": "ollama/llama3", "temperature": 0.2}},
+      {"id": "agent", "type": "core.llm_agent", "position": {"x": 280, "y": 80},
+       "label": "Summarizer",
+       "config": {"model": "ollama/llama3", "system_prompt": "Summarize the input."}},
+      {"id": "approval", "type": "core.human_approval", "position": {"x": 560, "y": 80},
+       "config": {"prompt": "Publish this summary?"}},
+      {"id": "output", "type": "core.output", "position": {"x": 840, "y": 40}},
+      {"id": "rejected", "type": "core.stop", "position": {"x": 840, "y": 180},
+       "config": {"status": "failed"}}
+    ],
+    "edges": [
+      {"id": "e1", "source": "input", "source_port": "out", "target": "agent", "target_port": "in"},
+      {"id": "e2", "source": "model", "source_port": "model", "target": "agent", "target_port": "model"},
+      {"id": "e3", "source": "agent", "source_port": "out", "target": "approval", "target_port": "in"},
+      {"id": "e4", "source": "approval", "source_port": "approved", "target": "output", "target_port": "in", "label": "approved"},
+      {"id": "e5", "source": "approval", "source_port": "rejected", "target": "rejected", "target_port": "in", "label": "rejected"}
+    ]
+  }
+}

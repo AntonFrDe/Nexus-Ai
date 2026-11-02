@@ -40,7 +40,7 @@ function EmptyDock() {
 }
 
 export function DockHost() {
-  const { registry, dock, setDock, store } = useStudio();
+  const { registry, dock, setDock, store, workflows } = useStudio();
   const layoutRevision = useWorkspace((state) => state.layoutRevision);
   const components = useMemo(() => dockComponents(registry), [registry]);
   // Serialized form of what the store already knows; lets us ignore no-op layout events.
@@ -69,10 +69,13 @@ export function DockHost() {
   }, [dock, store]);
 
   useEffect(() => {
-    const flush = () => void store.getState().flush({ keepalive: true });
+    const flush = () => {
+      void store.getState().flush({ keepalive: true });
+      void workflows.getState().flush({ keepalive: true });
+    };
     window.addEventListener("pagehide", flush);
     return () => window.removeEventListener("pagehide", flush);
-  }, [store]);
+  }, [store, workflows]);
 
   return (
     <DockviewReact

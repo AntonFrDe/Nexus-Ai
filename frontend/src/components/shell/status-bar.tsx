@@ -1,6 +1,6 @@
 "use client";
 
-import { useWorkspace } from "@/components/shell/providers";
+import { useWorkflow, useWorkspace } from "@/components/shell/providers";
 import { useOpenPanels } from "@/components/shell/use-open-panels";
 import type { SaveStatus } from "@/core/workspace/store";
 
@@ -17,6 +17,10 @@ export function StatusBar() {
   const notice = useWorkspace((state) => state.notice);
   const setNotice = useWorkspace((state) => state.setNotice);
   const panelCount = useOpenPanels().size;
+  const workflowName = useWorkflow((state) => state.meta?.name);
+  const workflowSave = useWorkflow((state) => state.saveStatus);
+  const workflowNotice = useWorkflow((state) => state.notice);
+  const clearWorkflowNotice = useWorkflow((state) => state.setNotice);
 
   return (
     <footer className="status-bar">
@@ -28,6 +32,25 @@ export function StatusBar() {
         <button type="button" className="status-notice" onClick={() => setNotice(null)}>
           {notice} ✕
         </button>
+      )}
+      {workflowNotice && (
+        <button
+          type="button"
+          className="status-notice"
+          onClick={() => clearWorkflowNotice(null)}
+        >
+          {workflowNotice} ✕
+        </button>
+      )}
+      <span className="status-spacer" />
+      {workflowName && (
+        <span
+          className="status-save"
+          data-status={workflowSave}
+          data-testid="workflow-save-status"
+        >
+          {workflowName}: {SAVE_LABELS[workflowSave]}
+        </span>
       )}
       <span className="status-save" data-status={saveStatus} data-testid="save-status">
         {SAVE_LABELS[saveStatus]}

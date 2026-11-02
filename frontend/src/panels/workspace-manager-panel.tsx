@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { FALLBACK_PRESET, PRESETS } from "@/core/workspace/presets";
 import { apiClient, type WorkspaceSummary } from "@/lib/api";
+import { downloadJson } from "@/lib/download";
 
 type Editing = { mode: "create" } | { mode: "rename"; workspace: WorkspaceSummary } | null;
 
@@ -113,18 +114,6 @@ function DeleteDialog({
   );
 }
 
-async function downloadExport(workspace: WorkspaceSummary) {
-  const document_ = await apiClient.exportWorkspace(workspace.id);
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(document_, null, 2)], { type: "application/json" }),
-  );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${workspace.name.replace(/[^\w-]+/g, "-").toLowerCase()}.nexus.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 export function WorkspaceManagerPanel() {
   const { store } = useStudio();
   const workspaces = useWorkspace((state) => state.workspaces);
@@ -134,6 +123,11 @@ export function WorkspaceManagerPanel() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const report = (error: unknown) => store.getState().setNotice(String(error));
+
+  const exportWorkspace = async (workspace: WorkspaceSummary) => {
+    await store.getState().flush();
+    await downloadJson(await apiClient.exportWorkspace(workspace.id), workspace.name, "workspace");
+  };
 
   const importFile = async (file: File) => {
     try {
@@ -199,7 +193,7 @@ export function WorkspaceManagerPanel() {
               className="icon-button"
               aria-label={`Export ${workspace.name}`}
               title="Export"
-              onClick={() => void downloadExport(workspace).catch(report)}
+              onClick={() => void exportWorkspace(workspace).catch(report)}
             >
               <Download className="size-3.5" />
             </button>
