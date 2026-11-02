@@ -127,10 +127,34 @@ it fetches prices online, which local-first operation cannot rely on.
 **T-030: Subscriptions are not providers.** The registry holds API credentials only. Claude and
 Google subscriptions belong to runtime adapters in Milestone 5.
 
+**T-031: The Claude runtime uses an API key only.** Anthropic's legal page tells developers using the
+Agent SDK to use API keys, and allows plan logins for the unmodified Claude Code binary. It does not
+address one person's own SDK script, so NEXUS takes the clear path. The SDK child process inherits
+the environment, so the adapter passes the key, blanks `CLAUDE_CODE_OAUTH_TOKEN` and loads no user
+settings. Otherwise it could fall back to a personal login, or run someone's hooks. Whether to add a
+runtime that drives the unmodified `claude` binary with a personal login is open, and is the
+owner's decision to make after reading the current terms.
+
+**T-032: The Antigravity runtime uses a Gemini API key, and stays read-only.** The SDK documents only
+a Gemini key or Vertex credentials. Nothing confirms that a Google AI subscription works. Write
+access stays off until permissions are enforced.
+
+**T-033: Agent SDKs are an optional extra.** They add about 430 MB of binaries and are not needed for
+local models. Versions are exact, for the reasons in T-025.
+
+**T-034: Runtimes come from the registry.** An agent's `runtime` is free text checked against
+registered runtimes, so a new runtime needs no schema change.
+
+**T-035: Every runtime error is scrubbed.** SDK exceptions can quote their configuration, so the
+registry removes the key from any error, whatever its type.
+
+**T-036: Paid calls need a decision per run.** `allow_paid` defaults to false, and retries keep the
+original run's choice.
+
 ## External integrations checked
 
 | Integration | Finding | Consequence |
 |---|---|---|
 | Antigravity | The [official SDK](https://antigravity.google/docs/sdk/overview/) is the Python package `google-antigravity`, an async `Agent` around a bundled runtime binary, separate from the IDE and from the managed Gemini API | Adapter targets the SDK only; never drives the IDE. A similarly named third-party GitHub repository exists and must not be used |
 | OpenCode | [`opencode serve`](https://opencode.ai/docs/server/) is a headless HTTP server with an OpenAPI 3.1 spec at `/doc`, defaulting to `127.0.0.1:4096`, with optional basic auth | Integrate over HTTP from the spec, in a later milestone. Endpoint details not yet reviewed |
-| Claude Agent SDK | Installable, Python 3.10+ | API surface still to be reviewed at Milestone 5 |
+| Claude Agent SDK | `query()` with `ClaudeAgentOptions`; the child process inherits the environment | Adapter built from the installed package; no real call made |

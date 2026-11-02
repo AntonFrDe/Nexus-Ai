@@ -1,6 +1,13 @@
 import { z } from "zod";
 
 import {
+  agent,
+  agentFields,
+  agentTemplate,
+  agentVersion,
+  runtime,
+} from "@/core/models/agent-types";
+import {
   connectionResult,
   modelTestResult,
   provider,
@@ -136,7 +143,7 @@ export const apiClient = {
   /** Refused runs are an expected outcome, returned as issues rather than thrown. */
   startExecution: async (
     workflowId: string,
-    body: { input: unknown; mode?: string; node_id?: string },
+    body: { input: unknown; mode?: string; node_id?: string; allow_paid?: boolean },
   ): Promise<ExecutionDetail | { issues: StartIssue[] }> => {
     const response = await fetch(`/api/workflows/${workflowId}/executions`, {
       method: "POST",
@@ -195,6 +202,27 @@ export const apiClient = {
     modelTestResult.parse(
       await request(`/models/${id}/test`, send("POST", { confirm_paid: confirmPaid })),
     ),
+  agentTemplates: async () => z.array(agentTemplate).parse(await request("/agent-templates")),
+  agentFields: async () => agentFields.parse(await request("/agent-fields")),
+  listRuntimes: async () => z.array(runtime).parse(await request("/runtimes")),
+  configureRuntime: async (id: string, patch: { secret_name?: string; enabled?: boolean }) =>
+    runtime.parse(await request(`/runtimes/${id}`, send("PATCH", patch))),
+  listAgents: async () => z.array(agent).parse(await request("/agents")),
+  createAgent: async (name: string, template: string | null) =>
+    agent.parse(await request("/agents", send("POST", { name, template }))),
+  updateAgent: async (
+    id: string,
+    patch: { name?: string; definition?: Record<string, unknown> },
+  ) => agent.parse(await request(`/agents/${id}`, send("PATCH", patch))),
+  deleteAgent: async (id: string) => {
+    await request(`/agents/${id}`, { method: "DELETE" });
+  },
+  cloneAgent: async (id: string) =>
+    agent.parse(await request(`/agents/${id}/clone`, { method: "POST" })),
+  listAgentVersions: async (id: string) =>
+    z.array(agentVersion).parse(await request(`/agents/${id}/versions`)),
+  restoreAgentVersion: async (id: string, number: number) =>
+    agent.parse(await request(`/agents/${id}/versions/${number}/restore`, { method: "POST" })),
   getSetting: async (key: string): Promise<unknown> => {
     try {
       return z.object({ value: z.unknown() }).parse(await request(`/settings/${key}`)).value;

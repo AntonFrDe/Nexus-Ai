@@ -31,6 +31,7 @@ class NodeContext:
     depth: int
     log: Callable[[str, str], Awaitable[None]]
     run_workflow: WorkflowRunner | None
+    allow_paid: bool = False
 
     @property
     def scope(self) -> dict[str, Any]:
@@ -50,6 +51,8 @@ class NodeResult:
     variables: dict[str, Any] = field(default_factory=dict)
     loop: dict[str, Any] | None = None
     stop: str | None = None
+    # Which runtime and model really answered, and what it consumed.
+    usage: dict[str, Any] | None = None
 
 
 NodeHandler = Callable[[NodeContext], Awaitable[NodeResult]]
@@ -57,9 +60,12 @@ NodeHandler = Callable[[NodeContext], Awaitable[NodeResult]]
 
 class ExecutionHooks(Protocol):
     def pause_requested(self) -> bool: ...
+    def allow_paid(self) -> bool: ...
     async def started(self, node: WorkflowNode, attempt: int, value: Any) -> None: ...
     async def waiting(self, node: WorkflowNode) -> None: ...
-    async def finished(self, node: WorkflowNode, attempt: int, output: Any) -> None: ...
+    async def finished(
+        self, node: WorkflowNode, attempt: int, output: Any, usage: dict[str, Any] | None
+    ) -> None: ...
     async def failed(self, node: WorkflowNode, attempt: int, error: str, final: bool) -> None: ...
     async def log(self, node: WorkflowNode, message: str, level: str) -> None: ...
 
@@ -70,13 +76,18 @@ class NoHooks:
     def pause_requested(self) -> bool:
         return False
 
+    def allow_paid(self) -> bool:
+        return False
+
     async def started(self, node: WorkflowNode, attempt: int, value: Any) -> None:
         pass
 
     async def waiting(self, node: WorkflowNode) -> None:
         pass
 
-    async def finished(self, node: WorkflowNode, attempt: int, output: Any) -> None:
+    async def finished(
+        self, node: WorkflowNode, attempt: int, output: Any, usage: dict[str, Any] | None
+    ) -> None:
         pass
 
     async def failed(self, node: WorkflowNode, attempt: int, error: str, final: bool) -> None:

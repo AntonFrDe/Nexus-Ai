@@ -146,12 +146,15 @@ BUILT_IN_NODES: list[NodeType] = [
             field("timeout_hours", "Timeout (hours)", FieldKind.NUMBER, minimum=0, advanced=True),
         ],
     ),
-    agent(
+    node(
         "custom_agent",
         "Custom Agent",
-        "Agent from a registered definition and runtime.",
+        AGENTS,
+        "Runs a registered agent on its own model and runtime.",
         "bot-message-square",
-        field("agent_id", "Agent definition", required=True),
+        inputs=[TEXT_IN],
+        outputs=[TEXT_OUT],
+        fields=[field("agent_id", "Agent definition", required=True, language="agent")],
     ),
     node(
         "model_selector",

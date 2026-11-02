@@ -107,6 +107,7 @@ class ExecutionStore:
         status: NodeStatus,
         output: Any = None,
         error: str | None = None,
+        usage: dict[str, Any] | None = None,
     ) -> None:
         with self.factory() as session, session.begin():
             row = self._open_row(session, execution_id, node_id)
@@ -115,6 +116,7 @@ class ExecutionStore:
             row.status = status
             row.output = output
             row.error = error
+            row.usage = usage
             if status in (NodeStatus.COMPLETED, NodeStatus.FAILED):
                 row.ended_at = datetime.now(UTC)
 

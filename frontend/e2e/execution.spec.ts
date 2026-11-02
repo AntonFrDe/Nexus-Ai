@@ -137,11 +137,11 @@ test("pause, resume and cancel a long run", async ({ page, request }) => {
 test("nodes without an implementation are refused with a reason", async ({ page, request }) => {
   await seed(
     request,
-    "Agent",
-    [node("in", "input"), node("agent", "llm_agent", { model: "local" })],
+    "Unimplemented node",
+    [node("in", "input"), node("agent", "coding_agent", { model: "local", workspace_path: "/tmp" })],
     [edge("in", "agent")],
   );
-  await openWorkflow(page, "Agent");
+  await openWorkflow(page, "Unimplemented node");
   await run(page);
   await expect(panel(page)).toContainText("cannot run yet");
 });

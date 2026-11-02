@@ -11,8 +11,8 @@ from nexus.execution.context import MAX_SUB_WORKFLOW_DEPTH, NodeContext, NodeHan
 from nexus.execution.expressions import evaluate, render_template
 
 UNAVAILABLE: dict[str, str] = {
-    "Agents": "Milestone 5 (agent runtimes)",
-    "Models": "Milestone 4 (model providers)",
+    "Agents": "a later milestone; use LLM Agent or Custom Agent",
+    "Models": "a later milestone",
     "Tools": "a later milestone, with permission enforcement",
     "Monitoring": "Milestone 7 (observability)",
 }

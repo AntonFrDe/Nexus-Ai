@@ -16,7 +16,11 @@ export interface ExecutionState {
   refused: { message: string; node_id: string | null }[];
 
   refresh(): Promise<void>;
-  run(workflowId: string, input: unknown, options?: { mode: string; node_id: string }): Promise<void>;
+  run(
+    workflowId: string,
+    input: unknown,
+    options?: { mode?: string; node_id?: string; allow_paid?: boolean },
+  ): Promise<void>;
   select(id: string): Promise<void>;
   clear(): void;
   selectNode(id: string | null): void;

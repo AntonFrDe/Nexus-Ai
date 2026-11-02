@@ -19,8 +19,17 @@ dependencies = [
   "uvicorn>=0.54,<1",
 ]
 
+[project.optional-dependencies]
+# Agent runtimes bundle large binaries, so they stay opt-in. Versions are exact: see T-025.
+agents = ["claude-agent-sdk==0.2.176", "google-antigravity==0.1.23"]
+
 [dependency-groups]
-dev = ["httpx>=0.28,<1", "pytest>=9,<10", "ruff>=0.8"]
+dev = [
+    "httpx>=0.28,<1",
+    "pytest>=9,<10",
+    "pytest-asyncio>=1,<2",
+    "ruff>=0.8",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -31,6 +40,7 @@ packages = ["src/nexus"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100

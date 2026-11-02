@@ -92,6 +92,11 @@ instances, and calls go through the `ProviderAdapter` interface, implemented by 
 `secrets/service.py` is the only code that handles secret values, and resolves one only for the
 length of a call.
 
+**Agents.** `agents/` stores definitions and versions. `runtimes/` holds the `RuntimeAdapter` contract
+and `RuntimeRegistry`, which resolves keys, applies paid and concurrency rules and scrubs errors.
+`execution/agent_nodes.py` connects both to the engine and checks readiness before a run starts.
+Operations a runtime lacks raise `UnsupportedCapability`.
+
 ## API
 
 | Method | Path | Purpose |
@@ -118,6 +123,10 @@ length of a call.
 | POST | `/api/providers/{id}/test`, `/discover` | Check the connection, list models |
 | GET, POST, PATCH, DELETE | `/api/models`, `/api/providers/{id}/models`, `/api/models/{id}` | Manage models |
 | POST | `/api/models/{id}/test` | One real short call |
+| GET, POST, PATCH, DELETE | `/api/agents`, `/api/agents/{id}` | Manage agents; each change is a version |
+| POST | `/api/agents/{id}/clone`, `/versions/{n}/restore` | Clone, restore |
+| GET | `/api/agent-templates`, `/api/agent-fields` | Catalogs |
+| GET, PATCH | `/api/runtimes`, `/api/runtimes/{id}` | Capabilities, health, key reference |
 | POST | `/api/workflows/{id}/executions` | Start a run (full, node or from_node) |
 | GET | `/api/executions`, `/api/executions/{id}` | List, read with node records |
 | GET | `/api/executions/{id}/events` | Live SSE, with replay |
@@ -137,7 +146,8 @@ length of a call.
 | `executions`, `node_executions`, `execution_events` | built | Runs with their own graph copy, per-node records, ordered events |
 | `secrets` | built | Name and Fernet ciphertext; the key lives outside the database |
 | `providers`, `models` | built | Registry, with a secret name only, and capabilities, overrides, pricing, defaults |
-| `agents`, `agent_versions`, `runtimes` | *planned, M5* | Definitions, kept separate from models and runtimes |
+| `agents`, `agent_versions` | built | Definitions and immutable versions |
+| `runtime_configs` | built | Key reference and enabled flag per runtime |
 | `plugins` | *planned, M6* | Installed plugin metadata |
 
 LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-sqlite`.

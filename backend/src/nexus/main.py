@@ -8,9 +8,13 @@ from sqlalchemy.orm import sessionmaker
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from nexus import __version__
+from nexus.agents.routes import EXCEPTION_HANDLERS as AGENT_EXCEPTION_HANDLERS
+from nexus.agents.routes import router as agents_router
+from nexus.agents.service import AgentStore
 from nexus.core.auth import TokenAuthMiddleware, issue_token
 from nexus.core.config import Settings
 from nexus.core.db import create_db_engine, run_migrations
+from nexus.execution.agent_nodes import AgentServices
 from nexus.execution.handlers import BUILT_IN_HANDLERS
 from nexus.execution.manager import ExecutionManager
 from nexus.execution.routes import EXCEPTION_HANDLERS as EXECUTION_EXCEPTION_HANDLERS
@@ -22,6 +26,10 @@ from nexus.providers.adapter import LiteLLMAdapter
 from nexus.providers.routes import EXCEPTION_HANDLERS as PROVIDER_EXCEPTION_HANDLERS
 from nexus.providers.routes import router as providers_router
 from nexus.providers.service import ProviderRegistry
+from nexus.runtimes.antigravity import AntigravityRuntime
+from nexus.runtimes.claude_sdk import ClaudeAgentRuntime
+from nexus.runtimes.native import NativeRuntime
+from nexus.runtimes.service import RuntimeRegistry
 from nexus.secrets.routes import router as secrets_router
 from nexus.secrets.service import SecretService, load_master_key
 from nexus.settings_store.routes import router as settings_router
@@ -49,6 +57,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.provider_registry = ProviderRegistry(
             app.state.session_factory, app.state.secrets, LiteLLMAdapter()
         )
+        app.state.agents = AgentStore(app.state.session_factory)
+        app.state.runtimes = RuntimeRegistry(app.state.session_factory, app.state.secrets)
+        app.state.runtimes.register(NativeRuntime(app.state.provider_registry))
+        app.state.runtimes.register(ClaudeAgentRuntime())
+        app.state.runtimes.register(AntigravityRuntime())
+        agent_services = AgentServices(
+            app.state.provider_registry, app.state.runtimes, app.state.agents
+        )
 
         def load_workflow(workflow_id: str) -> WorkflowGraph:
             with app.state.session_factory() as session:
@@ -65,10 +81,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             manager = ExecutionManager(
                 ExecutionStore(app.state.session_factory),
                 app.state.node_registry,
-                BUILT_IN_HANDLERS,
+                {**BUILT_IN_HANDLERS, **agent_services.handlers()},
                 saver,
                 load_workflow,
                 settings.max_concurrent_executions,
+                agent_services,
             )
             app.state.execution_manager = manager
             await manager.recover()
@@ -83,7 +100,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.node_registry = create_node_registry()
     app.add_exception_handler(workspace_service.WorkspaceNotFound, not_found)
     app.add_exception_handler(workflow_service.WorkflowNotFound, workflow_not_found)
-    for exception, handler in (*EXECUTION_EXCEPTION_HANDLERS, *PROVIDER_EXCEPTION_HANDLERS):
+    for exception, handler in (
+        *EXECUTION_EXCEPTION_HANDLERS,
+        *PROVIDER_EXCEPTION_HANDLERS,
+        *AGENT_EXCEPTION_HANDLERS,
+    ):
         app.add_exception_handler(exception, handler)
 
     api = APIRouter(prefix="/api")
@@ -101,6 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(executions_router)
     api.include_router(secrets_router)
     api.include_router(providers_router)
+    api.include_router(agents_router)
     app.include_router(api)
     return app
 

@@ -491,3 +491,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 1px
 .capability-grid label { display: flex; align-items: center; gap: 6px; }
 .capability-grid input { accent-color: var(--accent-color); }
 .model-detail { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+
+.run-paid { display: flex; flex: none; align-items: center; gap: 4px; color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+.run-paid input { flex: none; accent-color: var(--accent-color); }
+.runtime-row { display: grid; gap: 2px; padding-block: 6px; border-top: 1px solid var(--line); }
+.runtime-title { display: flex; align-items: center; gap: 6px; }

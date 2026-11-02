@@ -51,7 +51,12 @@ class ProviderAdapter(Protocol):
     async def list_models(self, connection: Connection) -> list[str]: ...
     async def describe(self, connection: Connection, model_id: str) -> ModelFacts: ...
     async def complete(
-        self, connection: Connection, model_id: str, prompt: str, parameters: dict[str, Any]
+        self,
+        connection: Connection,
+        model_id: str,
+        prompt: str,
+        parameters: dict[str, Any],
+        system: str = "",
     ) -> Completion: ...
 
 
@@ -132,13 +137,21 @@ class LiteLLMAdapter:
         return await asyncio.to_thread(self._describe, connection, model_id)
 
     async def complete(
-        self, connection: Connection, model_id: str, prompt: str, parameters: dict[str, Any]
+        self,
+        connection: Connection,
+        model_id: str,
+        prompt: str,
+        parameters: dict[str, Any],
+        system: str = "",
     ) -> Completion:
         litellm = await asyncio.to_thread(_litellm)
         started = time.perf_counter()
         options: dict[str, Any] = {
             "model": self._qualified(connection, model_id),
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                *([{"role": "system", "content": system}] if system else []),
+                {"role": "user", "content": prompt},
+            ],
             "timeout": connection.timeout,
             "num_retries": 0,
             **parameters,

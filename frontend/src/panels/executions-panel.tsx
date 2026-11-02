@@ -13,6 +13,20 @@ const duration = (row: NodeExecution) =>
     ? `${Math.max(0, new Date(row.ended_at).getTime() - new Date(row.started_at).getTime())} ms`
     : "";
 
+function usageText({ usage }: NodeExecution): string {
+  if (!usage) return "";
+  const tokens = Number(usage.input_tokens ?? 0) + Number(usage.output_tokens ?? 0);
+  const fallbacks = Number(usage.fallbacks_used ?? 0);
+  return [
+    String(usage.model),
+    tokens ? `${tokens} tokens` : "",
+    usage.cost_usd ? `$${Number(usage.cost_usd).toFixed(4)}` : "",
+    fallbacks ? `after ${fallbacks} fallback` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function Json({ label, value }: { label: string; value: unknown }) {
   return (
     <>
@@ -94,6 +108,7 @@ function RunDetail({ run }: { run: ExecutionDetail }) {
             <th>Status</th>
             <th>Attempt</th>
             <th>Time</th>
+            <th>Model</th>
           </tr>
         </thead>
         <tbody>
@@ -111,6 +126,7 @@ function RunDetail({ run }: { run: ExecutionDetail }) {
               </td>
               <td>{item.attempt}</td>
               <td>{duration(item)}</td>
+              <td>{usageText(item)}</td>
             </tr>
           ))}
         </tbody>

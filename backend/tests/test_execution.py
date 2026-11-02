@@ -458,13 +458,13 @@ def test_invalid_and_unimplemented_workflows_never_start(client):
 
     agent = workflow(
         client,
-        [n("in", "input"), n("a", "llm_agent", model="x")],
+        [n("in", "input"), n("a", "coding_agent", model="x", workspace_path="/tmp")],
         [e("in", "a")],
     )
     response = client.post(f"/api/workflows/{agent}/executions", json={})
     assert response.status_code == 422
     issue = next(i for i in response.json()["issues"] if i["code"] == "not_executable")
-    assert "Milestone 5" in issue["message"]
+    assert "cannot run yet" in issue["message"]
     assert client.get("/api/executions").json() == []
 
 

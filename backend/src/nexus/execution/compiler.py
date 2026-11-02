@@ -129,6 +129,7 @@ class GraphCompiler:
                 depth=depth,
                 log=log,
                 run_workflow=self.run_workflow,
+                allow_paid=hooks.allow_paid(),
             )
             for attempt in range(1, attempts + 1):
                 await hooks.started(node, attempt, context.input)
@@ -151,7 +152,7 @@ class GraphCompiler:
                         report = {"node_id": node.id, "error": text}
                         return {"errors": {node.id: report}, "routes": {node.id: []}}
                     raise NodeFailure(node.id, text) from error
-                await hooks.finished(node, attempt, result.output)
+                await hooks.finished(node, attempt, result.output, result.usage)
                 return self._update(node, node_type, result)
             raise AssertionError("unreachable")
 

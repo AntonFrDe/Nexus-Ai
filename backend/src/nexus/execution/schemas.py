@@ -14,6 +14,7 @@ class ExecutionStart(Strict):
     input: JsonValue = None
     mode: Literal["full", "node", "from_node"] = "full"
     node_id: str | None = None
+    allow_paid: bool = False
 
 
 class ApprovalDecision(Strict):
@@ -34,6 +35,7 @@ class ExecutionSummary(BaseModel):
     session_id: str
     status: str
     mode: str
+    allow_paid: bool
     entry_node: str | None
     error: str | None
     error_node: str | None
@@ -54,6 +56,7 @@ class NodeExecutionRead(BaseModel):
     input: Any
     output: Any
     error: str | None
+    usage: dict[str, Any] | None
     started_at: datetime
     ended_at: datetime | None
 

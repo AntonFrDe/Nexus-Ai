@@ -78,9 +78,8 @@ routing:
    not events. They are left out above until a deterministic signal exists; diff scope could serve
    for the second.
 5. **`fast` iterations.** One pass and `max_iterations: 2` disagree. The limit should mean retries.
-6. **Subscription access.** Whether the Claude Agent SDK or a Claude Code runtime may use subscription
-   authentication, and whether the student Google plan reaches Antigravity from a program, must be
-   checked against current official terms and documentation before Milestone 5.
+6. **Subscription access.** This differs from the plan above. The adapters use API keys, so Claude Pro
+   and Google student plans do not power these runtimes today. See T-031 and T-032.
 
 ## Effect on the roadmap
 
@@ -88,7 +87,7 @@ routing:
 |---|---|
 | 3 | Done in part: attempts and failures are recorded |
 | 4 | Done in part: registry, connection checks and paid-call confirmation. Abstract ID resolution moves to Milestone 5 |
-| 5 | `claude-code` and `antigravity` runtimes with declared capabilities, role and profile definitions, worktree isolation for writing agents, per-resource limits, budget rules, recording the model that really ran |
-| 5 or later | Router itself, and the Model Router node gaining profile support |
+| 5 | Done in part: runtimes with declared capabilities, role templates, per-resource limits, paid-call rule, recording the model that really ran |
+| Next | Router and profiles, abstract ID resolution, escalation, worktree isolation for writing agents |
 | After 5 | The six reference workflows: development, research, code audit, data processing, documentation, NEXUS maintenance |
 | 7 | Personal benchmark: about 20 real tasks per model, measuring test pass rate, corrections, time, tokens, cost and review quality |

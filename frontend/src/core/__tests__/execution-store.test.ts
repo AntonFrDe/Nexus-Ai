@@ -12,6 +12,7 @@ const detail = (status: string, id = "e1"): ExecutionDetail => ({
   session_id: "s",
   status,
   mode: "full",
+  allow_paid: false,
   entry_node: null,
   error: null,
   error_node: null,

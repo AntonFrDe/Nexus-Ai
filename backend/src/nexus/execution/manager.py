@@ -8,6 +8,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
+from nexus.execution.agent_nodes import AgentServices
 from nexus.execution.compiler import GraphCompiler, Selection, initial_state
 from nexus.execution.context import NodeFailure, NodeHandler, NoHooks
 from nexus.execution.handlers import UNAVAILABLE
@@ -36,6 +37,7 @@ def preflight(
     registry: NodeRegistry,
     handlers: dict[str, NodeHandler],
     selection: Selection = Selection(),
+    agents: AgentServices | None = None,
 ) -> list[Issue]:
     """Everything that stops a run from starting. Warnings never do."""
     partial = selection.entry is not None
@@ -66,6 +68,17 @@ def preflight(
                     node_id=node.id,
                 )
             )
+        elif agents is not None:
+            problem = agents.problem(node)
+            if problem:
+                issues.append(
+                    Issue(
+                        severity="error",
+                        code="not_ready",
+                        message=f"{node.label or node_type.title}: {problem}",
+                        node_id=node.id,
+                    )
+                )
     return issues
 
 
@@ -80,12 +93,16 @@ def _included(graph: WorkflowGraph, selection: Selection) -> set[str]:
 class _Hooks:
     """Connects one run's graph to its records and live events."""
 
-    def __init__(self, manager: "ExecutionManager", execution_id: str) -> None:
+    def __init__(self, manager: "ExecutionManager", execution_id: str, paid: bool) -> None:
         self.manager = manager
         self.execution_id = execution_id
+        self.paid = paid
 
     def pause_requested(self) -> bool:
         return self.execution_id in self.manager.pause_requests
+
+    def allow_paid(self) -> bool:
+        return self.paid
 
     async def started(self, node: WorkflowNode, attempt: int, value: Any) -> None:
         await self.manager.store_call(
@@ -97,11 +114,16 @@ class _Hooks:
         await self.manager.store_call("node_waiting", self.execution_id, node.id, node.type)
         await self.manager.emit(self.execution_id, "node_waiting", node.id, {})
 
-    async def finished(self, node: WorkflowNode, attempt: int, output: Any) -> None:
+    async def finished(
+        self, node: WorkflowNode, attempt: int, output: Any, usage: dict[str, Any] | None
+    ) -> None:
         await self.manager.store_call(
-            "node_finished", self.execution_id, node.id, NodeStatus.COMPLETED, output
+            "node_finished", self.execution_id, node.id, NodeStatus.COMPLETED, output, None, usage
         )
-        await self.manager.emit(self.execution_id, "node_completed", node.id, {"attempt": attempt})
+        payload: dict[str, Any] = {"attempt": attempt}
+        if usage:
+            payload["usage"] = usage
+        await self.manager.emit(self.execution_id, "node_completed", node.id, payload)
 
     async def failed(self, node: WorkflowNode, attempt: int, error: str, final: bool) -> None:
         if final:
@@ -130,10 +152,12 @@ class ExecutionManager:
         checkpointer: BaseCheckpointSaver,
         load_workflow,
         max_concurrent: int = 4,
+        agents: AgentServices | None = None,
     ) -> None:
         self.store = store
         self.registry = registry
         self.handlers = handlers
+        self.agents = agents
         self.checkpointer = checkpointer
         self.load_workflow = load_workflow
         self.compiler = GraphCompiler(registry, handlers, self._run_child)
@@ -168,11 +192,12 @@ class ExecutionManager:
     def _graph_for(self, execution) -> CompiledStateGraph:
         graph = WorkflowGraph.model_validate(execution.graph)
         selection = Selection(execution.entry_node, execution.mode == "node")
-        return self.compiler.build(graph, _Hooks(self, execution.id), self.checkpointer, selection)
+        hooks = _Hooks(self, execution.id, execution.allow_paid)
+        return self.compiler.build(graph, hooks, self.checkpointer, selection)
 
     async def _run_child(self, workflow_id: str, value: Any, depth: int) -> Any:
         graph = await asyncio.to_thread(self.load_workflow, workflow_id)
-        issues = preflight(graph, self.registry, self.handlers)
+        issues = preflight(graph, self.registry, self.handlers, agents=self.agents)
         if issues:
             raise ValueError(f"Sub-workflow cannot run: {issues[0].message}")
         if any(node.type == "core.human_approval" for node in graph.nodes):
@@ -198,11 +223,12 @@ class ExecutionManager:
         value: Any,
         mode: str = "full",
         node_id: str | None = None,
+        allow_paid: bool = False,
     ):
         if mode != "full" and node_id is None:
             raise ActionRefused("This mode needs a node")
         selection = Selection(node_id, mode == "node")
-        issues = preflight(graph, self.registry, self.handlers, selection)
+        issues = preflight(graph, self.registry, self.handlers, selection, self.agents)
         if issues:
             raise StartRefused(issues)
         execution = await self.store_call(
@@ -213,6 +239,7 @@ class ExecutionManager:
             status=S.PENDING.value,
             mode=mode,
             entry_node=node_id,
+            allow_paid=allow_paid,
             graph=graph.model_dump(mode="json"),
             input=value,
         )
@@ -320,6 +347,10 @@ class ExecutionManager:
             "nodes_run": sum(row.status == NodeStatus.COMPLETED for row in rows),
             "nodes_failed": sum(row.status == NodeStatus.FAILED for row in rows),
             "nodes_skipped": sum(row.status == NodeStatus.SKIPPED for row in rows),
+            "models": sorted({row.usage["model"] for row in rows if row.usage}),
+            "input_tokens": sum((row.usage or {}).get("input_tokens") or 0 for row in rows),
+            "output_tokens": sum((row.usage or {}).get("output_tokens") or 0 for row in rows),
+            "cost_usd": sum((row.usage or {}).get("cost_usd") or 0 for row in rows),
             "duration_ms": (
                 int((ended - started.replace(tzinfo=UTC)).total_seconds() * 1000)
                 if started

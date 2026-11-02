@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CodeEditor } from "@/components/code-editor";
 import { FieldForm, FieldSuggestions } from "@/components/forms/field-form";
-import { useModels, useStudio, useWorkflow } from "@/components/shell/providers";
+import { useAgents, useModels, useStudio, useWorkflow } from "@/components/shell/providers";
 import { findType, type StudioNode } from "@/core/workflow/graph";
 import type { PortSpec } from "@/core/workflow/types";
 
@@ -201,9 +201,13 @@ export function NodeInspectorPanel() {
   });
   const edge = useWorkflow((state) => state.edges.find((candidate) => candidate.selected) ?? null);
   const models = useModels((state) => state.models);
+  const agents = useAgents((state) => state.agents);
   const suggestions = useMemo(
-    () => ({ model: models.map((item) => `${item.provider_name}/${item.model_id}`) }),
-    [models],
+    () => ({
+      model: models.map((item) => `${item.provider_name}/${item.model_id}`),
+      agent: agents.map((item) => item.id),
+    }),
+    [models, agents],
   );
 
   if (node) {

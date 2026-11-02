@@ -2,7 +2,17 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from nexus.core.db import Base
@@ -29,6 +39,7 @@ class Execution(Base):
     session_id: Mapped[str] = mapped_column(String(36), default=_uuid)
     status: Mapped[str] = mapped_column(String(32))
     mode: Mapped[str] = mapped_column(String(16), default="full")
+    allow_paid: Mapped[bool] = mapped_column(Boolean, default=False)
     entry_node: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # The run keeps its own copy, so editing the workflow cannot change what it resumes.
     graph: Mapped[dict[str, Any]] = mapped_column(JSON)
@@ -55,6 +66,7 @@ class NodeExecution(Base):
     input: Mapped[Any] = mapped_column(JSON, nullable=True)
     output: Mapped[Any] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    usage: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

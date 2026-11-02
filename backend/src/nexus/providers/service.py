@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import UTC, datetime
 from typing import Any
@@ -7,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from nexus.nodes.config_model import validate_config
-from nexus.providers.adapter import Connection, ProviderAdapter, ProviderError
+from nexus.providers.adapter import Completion, Connection, ProviderAdapter, ProviderError
 from nexus.providers.capabilities import CAPABILITIES, effective, parameter_fields
 from nexus.providers.catalog import ProviderType, provider_type
 from nexus.providers.models import Model, Provider
@@ -35,6 +36,10 @@ class RegistryRefused(Exception):
     pass
 
 
+class PaidCallRefused(Exception):
+    pass
+
+
 class ProviderRegistry:
     def __init__(
         self,
@@ -45,6 +50,8 @@ class ProviderRegistry:
         self.factory = factory
         self.secrets = secrets
         self.adapter = adapter
+        # Local servers run one heavy model at a time.
+        self.limits: dict[str, asyncio.Semaphore] = {}
 
     def _type(self, type_id: str) -> ProviderType:
         known = provider_type(type_id)
@@ -259,6 +266,53 @@ class ProviderRegistry:
     def delete_model(self, model_id: str) -> None:
         with self.factory() as session, session.begin():
             session.delete(self._model(session, model_id))
+
+    def _resolve(self, session: Session, reference: str) -> tuple[Provider, Model] | None:
+        name, separator, model_id = reference.partition("/")
+        if not separator:
+            return None
+        provider = session.scalar(select(Provider).where(Provider.name == name))
+        if provider is None:
+            return None
+        model = session.scalar(
+            select(Model).where(Model.provider_id == provider.id, Model.model_id == model_id)
+        )
+        return (provider, model) if model else None
+
+    def reference_problem(self, reference: str) -> str | None:
+        with self.factory() as session:
+            found = self._resolve(session, reference)
+            if found is None:
+                return f"Model {reference} is not in the registry"
+            if not found[0].enabled:
+                return f"Provider {found[0].name} is disabled"
+        return None
+
+    async def call(
+        self,
+        reference: str,
+        prompt: str,
+        system: str,
+        parameters: dict[str, Any],
+        allow_paid: bool,
+    ) -> Completion:
+        """A model call from a run. Model defaults apply, and node settings win over them."""
+        with self.factory() as session:
+            found = self._resolve(session, reference)
+            if found is None:
+                raise RegistryRefused(f"Model {reference} is not in the registry")
+            provider, model = found
+            kind = self._type(provider.type)
+            provider_id, model_id = provider.id, model.model_id
+            capabilities = effective(model.capabilities, model.capability_overrides)
+            merged = self._checked_defaults(capabilities, {**model.defaults, **parameters})
+        if kind.paid and not allow_paid:
+            raise PaidCallRefused(f"{provider.name} is billed; this run does not allow paid calls")
+        connection = self._load_connection(provider_id)
+        limit = 1 if kind.local else 4
+        semaphore = self.limits.setdefault(provider_id, asyncio.Semaphore(limit))
+        async with semaphore:
+            return await self.adapter.complete(connection, model_id, prompt, merged, system)
 
     async def test_model(self, model_id: str, request: ModelTest) -> ModelTestResult:
         """Makes one real, short call. A paid provider needs explicit confirmation first."""

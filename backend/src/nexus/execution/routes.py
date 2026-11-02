@@ -84,6 +84,7 @@ async def start_execution(
         value=body.input,
         mode=body.mode,
         node_id=body.node_id,
+        allow_paid=body.allow_paid,
     )
     return await _detail(manager, execution.id)
 
@@ -188,6 +189,7 @@ async def retry(execution_id: str, manager: ExecutionManager = Depends(manager_o
         value=source.input,
         mode=source.mode,
         node_id=source.entry_node,
+        allow_paid=source.allow_paid,
     )
     return await _detail(manager, execution.id)
 

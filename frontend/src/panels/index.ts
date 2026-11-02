@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { PanelRegistry, type PanelDefinition } from "@/core/panels/registry";
+import { AgentsPanel } from "@/panels/agents-panel";
 import { AppearancePanel } from "@/panels/appearance-panel";
 import { ExecutionLogsPanel } from "@/panels/execution-logs-panel";
 import { ExecutionsPanel } from "@/panels/executions-panel";
@@ -180,14 +181,14 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     icon: BrainCircuit,
     component: ModelRegistryPanel,
   },
-  plannedPanel({
+  {
     id: "agent-registry",
     title: "Agents",
-    description: "Agent definitions, templates and runtimes.",
+    description: "Agent definitions, templates, versions and runtimes.",
     category: AI,
     icon: Bot,
-    milestone: 5,
-  }),
+    component: AgentsPanel,
+  },
 ];
 
 export function createPanelRegistry(): PanelRegistry {

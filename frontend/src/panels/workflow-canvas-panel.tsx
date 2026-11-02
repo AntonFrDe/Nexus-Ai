@@ -70,6 +70,7 @@ function RunControls() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
+  const [allowPaid, setAllowPaid] = useState(false);
 
   const start = async () => {
     let input: unknown = null;
@@ -86,7 +87,7 @@ function RunControls() {
     const state = workflows.getState();
     await state.flush();
     if (!state.meta) return;
-    await executions.getState().run(state.meta.id, input);
+    await executions.getState().run(state.meta.id, input, { allow_paid: allowPaid });
     const panel = registry.get("execution-list");
     if (panel && dock) {
       const existing = dock.getPanel(panel.id);
@@ -121,6 +122,14 @@ function RunControls() {
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => event.stopPropagation()}
           />
+          <label className="run-paid">
+            <input
+              type="checkbox"
+              checked={allowPaid}
+              onChange={(event) => setAllowPaid(event.target.checked)}
+            />
+            Allow paid calls
+          </label>
           <button type="submit" className="text-button">
             Start
           </button>

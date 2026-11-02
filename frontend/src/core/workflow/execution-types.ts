@@ -8,6 +8,7 @@ export const execution = z.object({
   session_id: z.string(),
   status: z.string(),
   mode: z.string(),
+  allow_paid: z.boolean(),
   entry_node: z.string().nullable(),
   error: z.string().nullable(),
   error_node: z.string().nullable(),
@@ -26,6 +27,7 @@ const nodeExecution = z.object({
   input: z.unknown(),
   output: z.unknown(),
   error: z.string().nullable(),
+  usage: z.record(z.string(), z.unknown()).nullable(),
   started_at: z.string(),
   ended_at: z.string().nullable(),
 });

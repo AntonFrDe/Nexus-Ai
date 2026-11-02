@@ -122,12 +122,42 @@ Known limitations:
 **Also fixed in this milestone:** starting twice, as React does in development, could reset the dock
 after the first user action. This is the likely cause of the unexplained Milestone 3 test failure.
 
-## Milestone 5: Agent Manager
+## Milestone 5: Agent Manager (complete, real runtimes unverified)
 
-Agent definitions and templates, runtime registry, Claude Agent SDK and Antigravity SDK adapters,
-sessions.
+| Item | State |
+|---|---|
+| Agent definitions separate from model and runtime | Done |
+| Templates, cloning, immutable versions, restore | Done |
+| Runtime registry with declared capabilities | Done |
+| Native runtime (one turn through the Model Registry) | Done |
+| Claude Agent SDK and Antigravity SDK adapters | Written, **never run for real** |
+| LLM Agent, Custom Agent, Model Selector and Model Fallback nodes | Done |
+| Recording the model that answered, tokens and cost | Done |
+| Paid calls refused unless the run allows them | Done |
+| Per-resource limits (one call at a time per local provider, Claude and Antigravity) | Done |
+| Agents panel | Done |
 
-Acceptance: compatible agents execute in workflows through native adapters.
+**Acceptance: not fully verified.** Compatible agents run in workflows through the native runtime,
+against a local test server. The Claude and Antigravity adapters were checked only against the
+installed SDKs' option names, because no key was available.
+
+Known limitations:
+
+- Session management is minimal: a session ID is recorded, but runs do not continue an agent session
+  yet. The `session` and `memory` fields are stored and unused.
+- Agent `tools`, `mcp_servers`, `permissions`, input and output schemas are stored. Only the Claude
+  adapter receives `tools`, and permissions are still not enforced by NEXUS.
+- The native runtime has no tools, so it is one model turn, not an agent loop.
+- Coding, Multi-Agent, Supervisor and Evaluator Agent nodes, Model Router, Embedding and Reranker
+  do not run yet.
+- Automatic routing, escalation and profiles are not built, and neither are the six reference
+  workflows.
+- Budget control is a yes or no on the run, plus a per-call budget on the Claude runtime.
+- An agent node interrupted by a crash runs again on resume, which can bill twice.
+- `custom_agent` picks agents by raw ID in the inspector.
+- Claude cost comes from the SDK. Native runs record tokens, but no cost yet.
+- `filelock` 3.32.7 has 13 published CVEs fixed in 4.2.1. LiteLLM requires `filelock<4`, so the fix
+  waits for LiteLLM. NEXUS does not use it directly.
 
 ## Milestone 6: Plugin SDK
 

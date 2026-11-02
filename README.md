@@ -2,9 +2,9 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 4 of 8.** Workflows run with live status, pause, resume and approval, and the
-Model Registry manages providers, encrypted keys and models. Workflows do not call models yet:
-agents arrive in Milestone 5, and only logic and data nodes run today. See
+**Status: Milestone 5 of 8.** Workflows can call models and registered agents, and record which
+model answered. The Claude and Antigravity adapters exist but have never made a real call, and no
+real model has answered through NEXUS yet. Agents have no tools yet. See
 [the roadmap](docs/ROADMAP.md).
 
 ## Run it
@@ -31,6 +31,13 @@ API keys.
 
 For local models, install [Ollama](https://ollama.com), pull a model, then add an Ollama provider in
 the Model Registry panel.
+
+To use the Claude Agent SDK or Antigravity runtimes, install them (about 430 MB) and add an API key in
+the Agents panel:
+
+```bash
+cd backend && ~/.local/bin/uv sync --extra agents
+```
 
 ## Test
 
