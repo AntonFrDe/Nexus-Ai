@@ -157,9 +157,9 @@ state to protect. It is simple and contains crashes, at the cost of a process st
 **T-038: No sandbox, no code.** A plain subprocess could read the master key, so platforms without
 `sandbox-exec` refuse code plugins instead of running them with weaker protection.
 
-**T-039: Read access is denied by area.** A deny-all profile broke Python start-up. Denying `/Users`,
-`/Volumes` and the NEXUS folder, then opening exact paths, passed every escape test. System files
-stay readable.
+**T-039: Read access is denied by area.** The profile starts from allow-all, denies `/Users`,
+`/Volumes` and the NEXUS folder, then opens exact paths. This passed every escape test. System files
+stay readable. A stricter deny-all profile was not tried.
 
 **T-040: Panels are single files with no route to the API.** A sandboxed iframe has an opaque origin,
 so the proxy refuses its requests, and the page policy sets `connect-src 'none'`.
