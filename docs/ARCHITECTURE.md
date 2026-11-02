@@ -144,7 +144,7 @@ LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-
 
 ## Security (current)
 
-- The API binds to `127.0.0.1` by default.
+- The API and the frontend bind to `127.0.0.1` by default.
 - `TrustedHostMiddleware` rejects unknown `Host` headers, which blocks DNS rebinding.
 - The browser uses one origin through a Next rewrite, so CORS stays disabled.
 - Request bodies are validated with `extra="forbid"`; stored documents are capped at 2 MB.

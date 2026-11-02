@@ -1,3 +1,5 @@
+import os from "node:os";
+
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const dockTab = (page: Page, name: string) =>
@@ -154,4 +156,20 @@ test("the proxy refuses cross-site callers and the API refuses direct ones", asy
   const direct = await request.get("http://127.0.0.1:8100/api/workflows");
   expect(direct.status()).toBe(401);
   expect((await request.get("/api/workflows")).ok()).toBe(true);
+});
+
+test("the frontend cannot be reached from the local network", async () => {
+  const addresses = Object.values(os.networkInterfaces())
+    .flat()
+    .filter((item) => item && !item.internal && item.family === "IPv4")
+    .map((item) => item!.address);
+  test.skip(addresses.length === 0, "This machine has no network address to test");
+  for (const address of addresses) {
+    // A spoofed Host header is what used to get a remote caller past the proxy.
+    const attempt = fetch(`http://${address}:3100/api/workflows`, {
+      headers: { Host: "localhost:3100" },
+      signal: AbortSignal.timeout(2000),
+    });
+    await expect(attempt).rejects.toThrow();
+  }
 });

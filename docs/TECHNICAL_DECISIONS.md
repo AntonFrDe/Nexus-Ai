@@ -55,6 +55,8 @@ a random token to `~/.nexus/api-token` (mode 0600), required on every API route 
 `src/proxy.ts` adds it to requests, but only for a local Host and a same-origin caller. Without that
 check a rebinding domain could use the proxy, whose rewrite would pass the backend's Host filter.
 Processes running as the same user can read the token, so this does not defend against them.
+The frontend must bind to `127.0.0.1`: the Host check alone cannot stop a network client, which can
+send any Host header.
 
 **T-010: `cn` package.** shadcn's current scaffold depends on `cn` (published by shadcn-ui) instead of
 clsx plus tailwind-merge. Kept.

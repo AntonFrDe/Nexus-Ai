@@ -22,7 +22,7 @@ export default defineConfig({
       env: { NEXUS_DATA_DIR: dataDir, NEXUS_PORT: "8100", NEXUS_SECRET_BACKEND: "file" },
     },
     {
-      command: "npx next dev --port 3100",
+      command: "npm run dev -- --port 3100",
       url: "http://localhost:3100",
       env: { NEXUS_API_URL: "http://127.0.0.1:8100", NEXT_DIST_DIR: ".next-e2e", NEXUS_DATA_DIR: dataDir },
       timeout: 120_000,
