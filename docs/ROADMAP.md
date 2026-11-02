@@ -28,7 +28,7 @@ Known limitations:
 
 | Item | State |
 |---|---|
-| Node registry and catalog of 45 node types across six categories, plus Group and Annotation | Done; definitions and validation only, nothing executes |
+| Node registry and catalog of 43 node types across six categories, plus Group and Annotation | Done; definitions and validation only, nothing executes |
 | Schema-driven inspector: all 12 field kinds, conditional fields, advanced sections | Done |
 | Per-node label, runtime settings, schema overrides, permissions | Done; permissions are stored, not enforced |
 | Canvas: pan, zoom, grid, snap, minimap, multi-select, duplicate, delete, undo/redo, group, resize, annotations, auto layout, edge labels, search | Done |
