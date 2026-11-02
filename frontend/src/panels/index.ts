@@ -167,6 +167,7 @@ const BUILT_IN_PANELS: PanelDefinition[] = [
     category: SYSTEM,
     icon: Puzzle,
     component: PluginsPanel,
+    experimental: true,
   },
   {
     id: "execution-trace",

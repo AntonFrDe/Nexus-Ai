@@ -28,6 +28,9 @@ from nexus.observability.routes import router as observability_router
 from nexus.plugins.routes import EXCEPTION_HANDLERS as PLUGIN_EXCEPTION_HANDLERS
 from nexus.plugins.routes import router as plugins_router
 from nexus.plugins.service import PluginManager
+from nexus.projects.routes import EXCEPTION_HANDLERS as PROJECT_EXCEPTION_HANDLERS
+from nexus.projects.routes import router as projects_router
+from nexus.projects.service import ProjectStore
 from nexus.providers.adapter import LiteLLMAdapter
 from nexus.providers.routes import EXCEPTION_HANDLERS as PROVIDER_EXCEPTION_HANDLERS
 from nexus.providers.routes import router as providers_router
@@ -81,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.provider_registry,
         )
         app.state.plugins.load_enabled()
+        app.state.projects = ProjectStore(app.state.session_factory, app.state.agents)
         app.state.langfuse = LangfuseExporter(app.state.session_factory, app.state.secrets)
         log_handler = attach_log_file(settings.data_dir)
 
@@ -126,6 +130,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         *PROVIDER_EXCEPTION_HANDLERS,
         *AGENT_EXCEPTION_HANDLERS,
         *PLUGIN_EXCEPTION_HANDLERS,
+        *PROJECT_EXCEPTION_HANDLERS,
     ):
         app.add_exception_handler(exception, handler)
 
@@ -147,6 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(agents_router)
     api.include_router(plugins_router)
     api.include_router(observability_router)
+    api.include_router(projects_router)
     app.include_router(api)
     return app
 

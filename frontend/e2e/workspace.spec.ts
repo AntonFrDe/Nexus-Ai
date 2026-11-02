@@ -10,7 +10,7 @@ async function openWorkspace(page: Page, name: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/advanced");
   await expect(tabs(page).getByRole("button")).not.toHaveCount(0);
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Layers, LayoutGrid, RotateCcw } from "lucide-react";
 
 import { useStudio, useWorkspace } from "@/components/shell/providers";
@@ -18,7 +19,9 @@ export function TitleBar() {
 
   return (
     <header className="title-bar">
-      <span className="brand">NEXUS</span>
+      <Link href="/" className="brand" title="Retour aux projets">
+        NEXUS
+      </Link>
       <nav className="workspace-tabs" aria-label="Workspaces">
         {workspaces.map((workspace) => (
           <button

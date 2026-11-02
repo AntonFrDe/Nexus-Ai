@@ -14,9 +14,15 @@ export type Density = "compact" | "comfortable";
 export interface Appearance {
   accent: string;
   density: Density;
+  /** Shows features kept out of the first version: plugins, cloud runtimes, Langfuse. */
+  experimental: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { accent: "amber", density: "compact" };
+export const DEFAULT_APPEARANCE: Appearance = {
+  accent: "amber",
+  density: "compact",
+  experimental: false,
+};
 
 const ACTIVE_WORKSPACE_KEY = "active_workspace";
 const APPEARANCE_KEY = "appearance";

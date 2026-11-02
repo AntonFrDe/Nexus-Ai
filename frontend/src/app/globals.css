@@ -98,7 +98,6 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  overflow: hidden;
   background: var(--surface-0);
   color: var(--text);
   font-family: var(--font-sans);
@@ -137,7 +136,7 @@ body {
   --dv-floating-box-shadow: 0 12px 32px oklch(0 0 0 / 0.45);
 }
 
-.studio { display: grid; grid-template-rows: 34px 1fr 22px; height: 100dvh; }
+.studio { overflow: hidden; display: grid; grid-template-rows: 34px 1fr 22px; height: 100dvh; }
 .dock { position: relative; min-height: 0; }
 
 .title-bar {
@@ -517,3 +516,62 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 1px
 .stat-row dt { color: var(--text-dim); font-size: 11px; }
 .stat-row dd { margin: 0; font-family: var(--font-mono); font-size: 15px; }
 .error-list { padding: 0; }
+
+.app-page { display: grid; grid-template-rows: 52px 1fr; height: 100dvh; font-size: 14px; }
+.app-header { display: flex; align-items: center; gap: 20px; padding-inline: 20px; background: var(--surface-0); border-bottom: 1px solid var(--line); }
+.app-header-center { flex: 1; min-width: 0; }
+.project-title { font-weight: 500; }
+.app-nav { display: flex; gap: 18px; color: var(--text-dim); }
+.app-nav a:hover { color: var(--text); }
+.home, .settings { width: 100%; max-width: 1040px; margin-inline: auto; padding: 32px 24px; overflow: auto; }
+.settings { max-width: 1100px; }
+.home-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.home h1, .settings h1 { font-size: 24px; font-weight: 600; }
+.settings h1 { margin-bottom: 24px; }
+.settings section { margin-bottom: 32px; }
+.settings h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.settings-frame { height: 520px; margin-top: 10px; background: var(--surface-1); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.home-empty { display: grid; justify-items: center; gap: 10px; padding: 64px 16px; text-align: center; color: var(--text-dim); }
+.home-empty h2 { font-size: 18px; color: var(--text); }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.project-card { position: relative; background: var(--surface-1); border: 1px solid var(--line); border-radius: 8px; transition: border-color 120ms ease; }
+.project-card:hover { border-color: var(--accent-color); }
+.project-card > a { display: grid; gap: 6px; min-height: 120px; align-content: start; padding: 16px; }
+.project-card h2 { padding-right: 24px; font-size: 15px; font-weight: 600; }
+.project-card p { color: var(--text-dim); }
+.project-meta { margin-top: auto; font-size: 12px; color: var(--text-dim); }
+.project-delete { position: absolute; top: 10px; right: 10px; opacity: 0; }
+.project-card:hover .project-delete, .project-delete:focus-visible { opacity: 1; }
+.project-layout { display: grid; grid-template-columns: 1fr minmax(280px, 380px); min-height: 0; }
+.chat { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+.chat-log { overflow: auto; display: grid; align-content: start; gap: 14px; padding: 24px clamp(16px, 6vw, 72px); }
+.chat-empty { display: grid; justify-items: start; gap: 10px; }
+.chat-empty h2 { font-size: 20px; font-weight: 600; }
+.suggestion { padding: 8px 12px; text-align: left; background: var(--surface-1); border: 1px solid var(--line); border-radius: 8px; }
+.suggestion:hover:not(:disabled) { border-color: var(--accent-color); }
+.message { display: grid; gap: 8px; max-width: 72ch; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message[data-role="user"] { justify-self: end; padding: 8px 12px; background: var(--surface-2); border-radius: 12px; }
+.proposal { display: grid; gap: 6px; padding: 12px 14px; white-space: normal; background: var(--surface-1); border: 1px solid var(--accent-color); border-radius: 8px; }
+.proposal[data-status="rejected"], .proposal[data-status="approved"] { border-color: var(--line); }
+.proposal-title { font-size: 12px; color: var(--accent-color); }
+.proposal ol, .proposal ul, .result-card ol { margin: 0; padding-left: 20px; }
+.proposal ol, .result-card ol { list-style: decimal; }
+.proposal ul { list-style: disc; }
+.proposal-actions { display: flex; gap: 8px; margin-top: 4px; }
+.chat-input { display: grid; gap: 6px; margin: 0 clamp(16px, 6vw, 72px) 16px; padding: 10px 12px; background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px; }
+.chat-input:focus-within { border-color: var(--accent-color); }
+.chat-input textarea { width: 100%; resize: none; color: var(--text); background: transparent; outline: none; }
+.chat-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-controls select { max-width: 60%; color: var(--text-dim); background: transparent; }
+.chat-setup { margin: 0 clamp(16px, 6vw, 72px) 20px; padding: 12px; background: var(--surface-1); border-radius: 8px; }
+.chat-setup a { color: var(--accent-color); text-decoration: underline; }
+.results { overflow: auto; padding: 24px 20px; background: var(--surface-1); border-left: 1px solid var(--line); }
+.results h2 { margin-bottom: 12px; font-size: 15px; font-weight: 600; }
+.result-card { display: grid; gap: 4px; margin-bottom: 12px; padding: 12px; background: var(--surface-0); border-radius: 8px; }
+.result-kind { font-size: 12px; color: var(--accent-color); }
+.result-card li { margin-top: 6px; }
+@media (max-width: 800px) {
+  .project-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .results { max-height: 35dvh; border-left: 0; border-top: 1px solid var(--line); }
+  .app-nav { gap: 10px; font-size: 12px; }
+}

@@ -2,9 +2,10 @@
 
 A local-first studio for designing, running and debugging AI agent workflows.
 
-**Status: Milestone 7 of 8.** Workflows run with live status, approval and recovery, call local
-models through Ollama, and can be extended by sandboxed plugins. Cloud runtimes have never made a
-real call, and agents have no tools yet. See [the roadmap](docs/ROADMAP.md).
+**Status: friendly interface, then Milestone 8.** NEXUS opens on your projects. Each project has a
+conversation with a local or cloud model and a results column. The assistant proposes roadmaps and
+agents, and nothing is created until you approve it. The full studio is under **Mode avancé**. See
+[the roadmap](docs/ROADMAP.md).
 
 ## Run it
 

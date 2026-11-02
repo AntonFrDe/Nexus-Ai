@@ -8,6 +8,7 @@ import {
   runtime,
 } from "@/core/models/agent-types";
 import { plugin, pluginPanel } from "@/core/models/plugin-types";
+import { projectDetail, projectSummary } from "@/core/projects/types";
 import {
   analytics,
   checkpoint,
@@ -279,6 +280,32 @@ export const apiClient = {
   },
   configurePlugin: async (id: string, config: Record<string, unknown>) => {
     await request(`/plugins/${id}/config`, send("PUT", { config }));
+  },
+  listProjects: async () => z.array(projectSummary).parse(await request("/projects")),
+  getProject: async (id: string) => projectDetail.parse(await request(`/projects/${id}`)),
+  createProject: async (name: string, description: string) =>
+    projectDetail.parse(await request("/projects", send("POST", { name, description }))),
+  deleteProject: async (id: string) => {
+    await request(`/projects/${id}`, { method: "DELETE" });
+  },
+  answerProposal: async (id: string, messageId: string, action: "approve" | "reject") =>
+    projectDetail.parse(
+      await request(`/projects/${id}/messages/${messageId}/${action}`, { method: "POST" }),
+    ),
+  chat: async (
+    id: string,
+    body: { content: string; model: string; allow_paid: boolean },
+  ): Promise<Response> => {
+    const response = await fetch(`/api/projects/${id}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const content = await response.json().catch(() => null);
+      throw new ApiError(response.status, String(content?.detail ?? response.statusText));
+    }
+    return response;
   },
   getSetting: async (key: string): Promise<unknown> => {
     try {

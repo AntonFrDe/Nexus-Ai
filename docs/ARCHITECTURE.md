@@ -136,6 +136,9 @@ under `sandbox-exec`. See [PLUGIN_SYSTEM.md](PLUGIN_SYSTEM.md).
 | POST | `/api/plugins/install`, `/{id}/enable`, `/{id}/disable` | Lifecycle |
 | PUT, DELETE | `/api/plugins/{id}/config`, `/api/plugins/{id}` | Configure, uninstall |
 | GET | `/api/plugins/{id}/panels/{panel}` | A panel page, under a locked-down policy |
+| GET, POST, PATCH, DELETE | `/api/projects`, `/api/projects/{id}` | Manage projects |
+| POST | `/api/projects/{id}/chat` | Streamed reply over SSE |
+| POST | `/api/projects/{id}/messages/{m}/approve`, `/reject` | Answer a proposal |
 | POST | `/api/workflows/{id}/executions` | Start a run (full, node or from_node) |
 | GET | `/api/executions`, `/api/executions/{id}` | List, read with node records |
 | GET | `/api/executions/{id}/events` | Live SSE, with replay |
@@ -157,6 +160,7 @@ under `sandbox-exec`. See [PLUGIN_SYSTEM.md](PLUGIN_SYSTEM.md).
 | `providers`, `models` | built | Registry, with a secret name only, and capabilities, overrides, pricing, defaults |
 | `agents`, `agent_versions` | built | Definitions and immutable versions |
 | `runtime_configs` | built | Key reference and enabled flag per runtime |
+| `projects`, `project_messages`, `project_results` | built | Projects, conversation, approved results |
 | `plugins` | built | Version, enabled flag, accepted permissions, configuration |
 
 LangGraph checkpoints get their own SQLite file, owned by `langgraph-checkpoint-sqlite`.

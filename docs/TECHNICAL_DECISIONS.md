@@ -171,6 +171,13 @@ for it.
 2026-11-16. A small HTTP exporter avoids another large dependency, sends metadata only by default,
 and can never change a run's result.
 
+**T-043: Model output is a proposal, never an action.** The assistant writes a fenced JSON block. It
+must match a strict schema, is shown as a card, and creates objects only through the approve route.
+Anything else stays plain text.
+
+**T-044: Deferred features stay in the code, behind a setting.** `appearance.experimental` hides
+plugins, cloud runtimes and Langfuse without removing their tests or their code.
+
 ## External integrations checked
 
 | Integration | Finding | Consequence |

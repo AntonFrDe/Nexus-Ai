@@ -7,10 +7,16 @@ const dockTab = (page: Page, name: string) =>
   page.locator(".dv-tab", { hasText: new RegExp(`^${name}$`) });
 const panel = (page: Page) => page.getByRole("tabpanel", { name: "Plugins" });
 
+test.beforeEach(async ({ request }) => {
+  await request.put("/api/settings/appearance", {
+    data: { value: { accent: "amber", density: "compact", experimental: true } },
+  });
+});
+
 async function openPlugins(page: Page) {
   const name = `Plugins ${crypto.randomUUID().slice(0, 8)}`;
   await page.request.post("/api/workspaces", { data: { name, preset: "custom" } });
-  await page.goto("/");
+  await page.goto("/advanced");
   const tab = page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name });
   await tab.click();
   await expect(tab).toHaveAttribute("aria-current", "page");
@@ -70,7 +76,7 @@ test("an example plugin adds a node that runs in a workflow", async ({ page, req
       ],
     },
   });
-  await page.goto("/");
+  await page.goto("/advanced");
   await page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Workflow Builder" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   await dockTab(page, "Node Library").click();

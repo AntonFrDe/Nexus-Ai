@@ -24,7 +24,7 @@ async function seed(request: APIRequestContext, name: string, nodes: object[], e
 }
 
 async function openDebug(page: Page) {
-  await page.goto("/");
+  await page.goto("/advanced");
   await page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Debug Studio" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   await expect(dockTab(page, "Execution Trace")).toBeVisible();
@@ -123,11 +123,11 @@ test("replay is marked as a replay and can be compared", async ({ page, request 
 test("cost analytics reports runs and failures", async ({ page, request }) => {
   const id = await seed(request, "Counted", [node("in", "input"), node("p", "json_parser")], [edge("in", "p")]);
   await run(request, id, "bad");
-  await page.goto("/");
+  await page.goto("/advanced");
   await page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Analytics" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   const panel = page.getByRole("tabpanel", { name: "Cost Analytics" });
   await expect(panel.getByText("Most frequent errors")).toBeVisible();
   await expect(panel.getByLabel("Period").getByRole("button", { name: "7 days" })).toBeVisible();
-  await expect(panel.getByRole("checkbox", { name: "Export finished runs" })).not.toBeChecked();
+  await expect(panel.getByRole("checkbox", { name: "Export finished runs" })).toHaveCount(0);
 });

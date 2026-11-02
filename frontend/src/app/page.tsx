@@ -1,5 +1,5 @@
-import { Studio } from "@/components/shell/studio";
+import { ProjectsHome } from "@/components/home/projects-home";
 
 export default function Home() {
-  return <Studio />;
+  return <ProjectsHome />;
 }

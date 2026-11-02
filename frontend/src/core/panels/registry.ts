@@ -11,6 +11,8 @@ export interface PanelDefinition {
   category: string;
   icon: LucideIcon;
   component: ComponentType<PanelProps>;
+  /** Listed only when experimental features are switched on. */
+  experimental?: boolean;
 }
 
 /** The workspace engine knows panels only through this registry; plugins will extend it. */

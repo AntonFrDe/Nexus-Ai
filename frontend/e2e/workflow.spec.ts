@@ -36,7 +36,7 @@ async function connect(page: Page, source: string, sourcePort: string, target: s
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/advanced");
   await tabs(page).getByRole("button", { name: "Workflow Builder" }).click();
   await expect(dockTab(page, "Workflow Canvas")).toBeVisible();
 });

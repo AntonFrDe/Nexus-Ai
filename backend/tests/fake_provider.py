@@ -38,7 +38,27 @@ class _Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length))
         self.server.requests.append({"path": self.path, "body": body})
-        if self.path == "/api/chat":
+        if self.path == "/api/chat" and body.get("stream"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson")
+            self.end_headers()
+            reply = self.server.reply
+            for part in (reply[: len(reply) // 2], reply[len(reply) // 2 :]):
+                line = {
+                    "model": body["model"],
+                    "message": {"role": "assistant", "content": part},
+                    "done": False,
+                }
+                self.wfile.write(json.dumps(line).encode() + b"\n")
+            end = {
+                "model": body["model"],
+                "message": {"role": "assistant", "content": ""},
+                "done": True,
+                "prompt_eval_count": 4,
+                "eval_count": 2,
+            }
+            self.wfile.write(json.dumps(end).encode() + b"\n")
+        elif self.path == "/api/chat":
             self._send(
                 200,
                 {
@@ -77,5 +97,6 @@ class _Handler(BaseHTTPRequestHandler):
 def start_fake_provider() -> ThreadingHTTPServer:
     server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     server.requests = []
+    server.reply = "ready"
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server

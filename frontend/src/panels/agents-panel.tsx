@@ -4,7 +4,7 @@ import { Copy, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
 import { FieldForm, FieldSuggestions } from "@/components/forms/field-form";
-import { useAgents, useModels, useStudio } from "@/components/shell/providers";
+import { useAgents, useModels, useStudio, useWorkspace } from "@/components/shell/providers";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -190,6 +190,7 @@ export function AgentsPanel() {
   const runtimes = useAgents((state) => state.runtimes);
   const error = useAgents((state) => state.error);
   const models = useModels((state) => state.models);
+  const experimental = useWorkspace((state) => state.appearance.experimental);
   const [adding, setAdding] = useState(false);
   const agent = list.find((item) => item.id === selected);
   const suggestions = useMemo(
@@ -236,10 +237,14 @@ export function AgentsPanel() {
         ) : (
           <p className="muted">Create an agent, or select one to edit it.</p>
         )}
-        <h2 className="section-label">Runtimes</h2>
-        {runtimes.map((runtime) => (
-          <RuntimeRow key={runtime.id} runtime={runtime} />
-        ))}
+        {experimental && (
+          <>
+            <h2 className="section-label">Runtimes</h2>
+            {runtimes.map((runtime) => (
+              <RuntimeRow key={runtime.id} runtime={runtime} />
+            ))}
+          </>
+        )}
       </div>
       <NewAgentDialog open={adding} onClose={() => setAdding(false)} />
     </div>

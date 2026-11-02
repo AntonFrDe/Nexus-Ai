@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -51,6 +52,9 @@ class ProviderError(Exception):
 class ProviderAdapter(Protocol):
     async def list_models(self, connection: Connection) -> list[str]: ...
     async def describe(self, connection: Connection, model_id: str) -> ModelFacts: ...
+    def stream(
+        self, connection: Connection, model_id: str, messages: list[dict[str, str]]
+    ) -> AsyncIterator[str]: ...
     async def complete(
         self,
         connection: Connection,
@@ -136,6 +140,29 @@ class LiteLLMAdapter:
 
     async def describe(self, connection: Connection, model_id: str) -> ModelFacts:
         return await asyncio.to_thread(self._describe, connection, model_id)
+
+    async def stream(
+        self, connection: Connection, model_id: str, messages: list[dict[str, str]]
+    ) -> AsyncIterator[str]:
+        litellm = await asyncio.to_thread(_litellm)
+        options: dict[str, Any] = {
+            "model": self._qualified(connection, model_id),
+            "messages": messages,
+            "timeout": connection.timeout,
+            "num_retries": 0,
+            "stream": True,
+            "api_key": connection.api_key or "not-needed",
+        }
+        if connection.endpoint:
+            options["api_base"] = connection.endpoint
+        try:
+            response = await litellm.acompletion(**options)
+            async for chunk in response:
+                text = chunk.choices[0].delta.content
+                if text:
+                    yield text
+        except Exception as error:
+            raise ProviderError(connection.scrub(str(error))) from error
 
     async def complete(
         self,

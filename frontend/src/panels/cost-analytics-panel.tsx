@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useStudio } from "@/components/shell/providers";
+import { useStudio, useWorkspace } from "@/components/shell/providers";
 import type { Analytics, LangfuseConfig } from "@/core/workflow/trace-types";
 import { apiClient } from "@/lib/api";
 
@@ -129,6 +129,7 @@ function LangfuseSettings() {
 
 export function CostAnalyticsPanel() {
   const { executions } = useStudio();
+  const experimental = useWorkspace((state) => state.appearance.experimental);
   const [days, setDays] = useState(30);
   const [report, setReport] = useState<Analytics | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -230,7 +231,7 @@ export function CostAnalyticsPanel() {
           </ul>
         </>
       )}
-      <LangfuseSettings />
+      {experimental && <LangfuseSettings />}
     </div>
   );
 }

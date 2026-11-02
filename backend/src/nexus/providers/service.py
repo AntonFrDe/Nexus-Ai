@@ -1,5 +1,6 @@
 import asyncio
 import time
+from collections.abc import AsyncIterator
 from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
@@ -336,6 +337,25 @@ class ProviderRegistry:
         async with semaphore:
             answer = await self.adapter.complete(connection, model_id, prompt, merged, system)
         return replace(answer, cost_usd=self._cost(answer, prices, kind.local))
+
+    async def stream(
+        self, reference: str, messages: list[dict[str, str]], allow_paid: bool
+    ) -> AsyncIterator[str]:
+        """A conversation reply, piece by piece, under the same paid and concurrency rules."""
+        with self.factory() as session:
+            found = self._resolve(session, reference)
+            if found is None:
+                raise RegistryRefused(f"Model {reference} is not in the registry")
+            provider, model = found
+            kind = self._type(provider.type)
+            provider_id, model_id = provider.id, model.model_id
+        if kind.paid and not allow_paid:
+            raise PaidCallRefused(f"{provider.name} is billed; confirm paid calls first")
+        connection = self._load_connection(provider_id)
+        semaphore = self.limits.setdefault(provider_id, asyncio.Semaphore(1 if kind.local else 4))
+        async with semaphore:
+            async for text in self.adapter.stream(connection, model_id, messages):
+                yield text
 
     async def test_model(self, model_id: str, request: ModelTest) -> ModelTestResult:
         """Makes one real, short call. A paid provider needs explicit confirmation first."""

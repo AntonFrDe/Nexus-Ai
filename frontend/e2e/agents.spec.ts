@@ -5,10 +5,16 @@ const panel = (page: Page) => page.getByRole("tabpanel", { name: "Agents" });
 const dockTab = (page: Page, name: string) =>
   page.locator(".dv-tab", { hasText: new RegExp(`^${name}$`) });
 
+test.beforeEach(async ({ request }) => {
+  await request.put("/api/settings/appearance", {
+    data: { value: { accent: "amber", density: "compact", experimental: true } },
+  });
+});
+
 async function openAgents(page: Page) {
   const name = `Agents ${crypto.randomUUID().slice(0, 8)}`;
   await page.request.post("/api/workspaces", { data: { name, preset: "custom" } });
-  await page.goto("/");
+  await page.goto("/advanced");
   const tab = page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name });
   await tab.click();
   await expect(tab).toHaveAttribute("aria-current", "page");
@@ -84,7 +90,7 @@ test("a workflow runs an agent and shows which model answered", async ({ page, r
     },
   });
 
-  await page.goto("/");
+  await page.goto("/advanced");
   await page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Workflow Builder" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   await dockTab(page, "Workflows").click();

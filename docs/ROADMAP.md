@@ -204,6 +204,30 @@ Known limitations:
 - Replay in the interface changes LLM Agent model and temperature only; the API accepts any setting.
 - Restoring a checkpoint has no interface yet.
 
+## Friendly interface (complete)
+
+NEXUS was too much like an IDE for a first use, so the default experience became simpler. Nothing was
+removed.
+
+| Item | State |
+|---|---|
+| Projects page | Done |
+| Project page: streamed conversation and results | Done |
+| Roadmap and agent proposals, created only after approval | Done, tested with real Ollama models |
+| Settings page: models, agents, appearance | Done |
+| Full studio moved to `/advanced` | Done |
+| Plugins, cloud runtimes and Langfuse hidden behind a setting | Done |
+
+Known limitations:
+
+- A project is a topic with a conversation. It has no access to your files.
+- Model output decides whether a proposal appears: a reply that breaks the format is shown as text.
+- New pages are in French, while the studio and the panels reused in Settings are in English.
+- Replies are not rendered as Markdown, and there is one conversation per project.
+- Approved roadmaps and agents cannot be edited from the project page.
+- Agents created here are saved, but the conversation does not run them yet.
+- Paid models ask for confirmation once per page visit.
+
 ## Milestone 8: Hardening
 
 Security review, performance, error handling, backup and restore, documentation, Tauri preparation.

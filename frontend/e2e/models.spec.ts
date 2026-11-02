@@ -7,7 +7,7 @@ async function openRegistry(page: Page) {
   // Each test gets its own workspace, so the layout it changes cannot reach other tests.
   const name = `Models ${crypto.randomUUID().slice(0, 8)}`;
   await page.request.post("/api/workspaces", { data: { name, preset: "custom" } });
-  await page.goto("/");
+  await page.goto("/advanced");
   const tab = page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name });
   await tab.click();
   await expect(tab).toHaveAttribute("aria-current", "page");
@@ -92,7 +92,7 @@ test("registered models are suggested in the node inspector", async ({ page, req
   ).json();
   await request.post(`/api/providers/${provider.id}/discover`);
 
-  await page.goto("/");
+  await page.goto("/advanced");
   await page.getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Workflow Builder" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   await page.locator(".dv-tab", { hasText: /^Workflows$/ }).click();

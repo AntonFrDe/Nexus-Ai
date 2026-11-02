@@ -18,6 +18,22 @@ createServer((request, response) => {
     }
     if (request.url === "/api/chat") {
       const body = JSON.parse(raw);
+      if (body.stream) {
+        const asked = body.messages.at(-1).content.toLowerCase();
+        const proposal = {
+          roadmap: { title: "Plan e2e", steps: [{ title: "Cadrer", detail: "Définir le besoin" }] },
+          agents: [{ name: "Agent e2e", role: "Planification", system_prompt: "Tu planifies." }],
+        };
+        const reply = asked.includes("roadmap")
+          ? `Voici ma proposition.\n\n\`\`\`nexus-proposal\n${JSON.stringify(proposal)}\n\`\`\``
+          : "Bonjour, je suis prêt.";
+        response.writeHead(200, { "Content-Type": "application/x-ndjson" });
+        for (const content of [reply.slice(0, 8), reply.slice(8)]) {
+          response.write(`${JSON.stringify({ model: body.model, message: { role: "assistant", content }, done: false })}\n`);
+        }
+        response.end(`${JSON.stringify({ model: body.model, message: { role: "assistant", content: "" }, done: true })}\n`);
+        return;
+      }
       return send(response, 200, {
         model: body.model,
         message: { role: "assistant", content: "ready" },

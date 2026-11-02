@@ -1,6 +1,6 @@
 "use client";
 
-import { useStudio } from "@/components/shell/providers";
+import { useStudio, useWorkspace } from "@/components/shell/providers";
 import { useOpenPanels, useRevealPanel } from "@/components/shell/use-open-panels";
 import type { PanelProps } from "@/core/panels/registry";
 
@@ -8,7 +8,8 @@ export function PanelLibraryPanel({ api }: PanelProps) {
   const { registry, dock } = useStudio();
   const open = useOpenPanels();
   const reveal = useRevealPanel();
-  const panels = registry.list();
+  const experimental = useWorkspace((state) => state.appearance.experimental);
+  const panels = registry.list().filter((panel) => experimental || !panel.experimental);
   const categories = [...new Set(panels.map((panel) => panel.category))];
 
   return (

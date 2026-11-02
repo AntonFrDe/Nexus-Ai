@@ -34,7 +34,7 @@ async function seed(
 }
 
 async function openWorkflow(page: Page, name: string) {
-  await page.goto("/");
+  await page.goto("/advanced");
   await tabs(page).getByRole("button", { name: "Workflow Builder" }).click();
   await page.getByRole("button", { name: "Reset layout" }).click();
   await dockTab(page, "Workflows").click();
